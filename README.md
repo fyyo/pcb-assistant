@@ -52,4 +52,4 @@ python -m venv .venv
 | 了解代码、运行测试或贡献修改 | [架构](docs/ARCHITECTURE.md) · [开发](docs/DEVELOPMENT.md) · [测试](tests/README.md) |
 | 可选模型训练 | [训练](docs/TRAINING.md) |
 
-业务代码位于 `pcb_assistant/`，诊断代码位于 `agent/`，维护工具位于 `scripts/`。根目录两个 Python 文件分别是命令行和 MCP 的启动入口。
+业务代码位于 `pcb_assistant/`，诊断代码位于 `agent/`，维护工具位于 `scripts/`。运行配置集中在 `config/`，可选训练配置放在 `config/training/`；日常查询无需调整训练配置。根目录两个 Python 文件分别是命令行和 MCP 的启动入口。

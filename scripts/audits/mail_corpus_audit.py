@@ -11,7 +11,7 @@ import sqlite3
 
 
 DEFAULT_DATABASE = Path("data/phase3_catalog_v3/catalog.sqlite3")
-DEFAULT_PRIVACY_POLICY = Path("privacy_policy.json")
+DEFAULT_PRIVACY_POLICY = Path("config/privacy.json")
 BRACKET_MARKER = re.compile(r"\[[^\]]{1,32}\]")
 HAN = re.compile(r"[\u3400-\u9fff]")
 LATIN = re.compile(r"[A-Za-z]")

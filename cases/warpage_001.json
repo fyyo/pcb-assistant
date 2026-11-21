@@ -1,9 +1,0 @@
-{
-  "case_id": "warpage_001",
-  "question": "压合后板子翘曲，冷却后发现，叠构可能不对称。",
-  "defect": "warpage",
-  "stage": "lamination",
-  "location": "large_area",
-  "material": "FR-4",
-  "stackup": "6层"
-}

@@ -96,14 +96,14 @@ def run(args):
     torch.set_num_threads(4)
     if not torch.cuda.is_available():
         raise RuntimeError('cuda_unavailable')
-    policy = json.loads((ROOT / 'training_policy.json').read_text())
+    policy = json.loads((ROOT / 'config/training/policy.json').read_text())
     if policy['local_model_training_allowed'] is not True or policy['mail_upload_allowed'] is not False:
         raise ValueError('training_policy_mismatch')
     source_report = json.loads((args.data / 'report.json').read_text())
     for name, artifact in source_report['artifacts'].items():
         if digest_file(args.data / name) != artifact['sha256']:
             raise ValueError('training_data_checksum_mismatch')
-    base_spec = json.loads((ROOT / 'base_model.json').read_text())
+    base_spec = json.loads((ROOT / 'config/training/model.json').read_text())
     for name in ('model.safetensors', 'config.json', 'tokenizer.json', 'tokenizer_config.json'):
         if digest_file(args.base / name) != base_spec['files'][name][1]:
             raise ValueError('base_model_checksum_mismatch')

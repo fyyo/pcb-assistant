@@ -19,7 +19,7 @@ def digest(path):
 
 
 def main():
-    spec = json.loads((ROOT / 'base_model.json').read_text())
+    spec = json.loads((ROOT / 'config/training/model.json').read_text())
     target = ROOT / 'models' / spec['model_id'].split('/')[-1]
     target.mkdir(parents=True, exist_ok=True)
     for name, (expected_size, expected_hash) in spec['files'].items():

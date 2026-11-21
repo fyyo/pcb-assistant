@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "mode": "local_evidence_assistant",
+  "local_use_allowed": true,
+  "manual_review_required": false,
+  "external_services": false,
+  "evidence_status": "unverified_email_discussion",
+  "source_instructions_executable": false
+}

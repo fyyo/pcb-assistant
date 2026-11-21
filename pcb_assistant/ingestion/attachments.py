@@ -120,7 +120,7 @@ def run(args):
     source = Path(args.source).resolve()
     before = source.stat()
     key = (ROOT / '.private/pseudonym.key').read_bytes()
-    policy = json.loads((ROOT / 'attachment_policy.json').read_text())
+    policy = json.loads((ROOT / 'config/attachments.json').read_text())
     if (policy['local_attachment_processing_allowed'] is not True or policy['external_services'] is not False
             or policy['execute_macros_or_formulas'] is not False):
         raise ValueError('attachment_policy_mismatch')
@@ -137,7 +137,7 @@ def run(args):
             raise ValueError('incompatible_privacy_cache')
         compatible_signature = compatibility['signature']
     signature = hashlib.sha256(''.join(hash_file(ROOT / name) for name in
-                              ('pcb_assistant/ingestion/extract.py', 'pcb_assistant/privacy/mail.py', 'attachment_policy.json')).encode()).hexdigest()
+                              ('pcb_assistant/ingestion/extract.py', 'pcb_assistant/privacy/mail.py', 'config/attachments.json')).encode()).hexdigest()
     previous_cache = None
     if args.cache_from:
         previous_report = json.loads((ROOT / 'data' / args.cache_from / 'report.json').read_text())

@@ -77,7 +77,7 @@ def evaluate(run, foundation, data, output, root=ROOT):
     from pcb_assistant.training.train import instruction_tokens
     verify_data(foundation)
     verify_data(data)
-    benchmark = read(root / 'engineering_benchmark.json')
+    benchmark = read(root / 'config/training/benchmark.json')
     signature = fingerprint({'report': digest_file(run / 'report.json'),
                              'inference': digest_file(run / 'inference_config.json'),
                              'foundation': digest_file(foundation / 'report.json'),
@@ -143,7 +143,7 @@ def evaluate(run, foundation, data, output, root=ROOT):
 def compare(incumbent, candidate, foundation, data, output, root=ROOT):
     before = evaluate(incumbent, foundation, data, output / 'incumbent_evaluation.json', root)
     after = before if candidate == incumbent else evaluate(candidate, foundation, data, output / 'candidate_evaluation.json', root)
-    decision = decide(before, after, read(root / 'continuous_policy.json'))
+    decision = decide(before, after, read(root / 'config/training/continuous.json'))
     decision.update({'incumbent_run': incumbent.name, 'candidate_run': candidate.name,
                      'incumbent_signature': before['signature'], 'candidate_signature': after['signature']})
     dump_json(output / 'promotion_evaluation.json', decision)

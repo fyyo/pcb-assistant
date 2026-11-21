@@ -56,7 +56,7 @@ def compare(incumbent,candidate,data,foundation,output):
  new_public=public_evaluate(candidate,data,output/'candidate_public_evaluation.json')
  before={**before,'losses':{**before['losses'],'new_public_instruction':old_public['loss']}}
  after={**after,'losses':{**after['losses'],'new_public_instruction':new_public['loss']}}
- decision=decide(before,after,read(ROOT/'continuous_policy.json'))
+ decision=decide(before,after,read(ROOT/'config/training/continuous.json'))
  decision.update(incumbent_run=incumbent.name,candidate_run=candidate.name,public_tasks=new_public['tasks'],
                  public_loss_before=old_public['loss'],public_loss_after=new_public['loss'],
                  public_generation_assessment_required_before_promotion=True)

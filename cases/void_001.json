@@ -1,9 +1,0 @@
-{
-  "case_id": "void_001",
-  "question": "压合后 BGA 区出现空洞，真空度记录不完整。",
-  "defect": "void",
-  "stage": "lamination",
-  "location": "bga_area",
-  "material": "FR-4",
-  "stackup": "10层"
-}

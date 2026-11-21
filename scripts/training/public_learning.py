@@ -13,7 +13,7 @@ def execute(command):
 def run():
  from scripts.training.prepare_public_training import prepare
  with lock('public_curriculum_runner'),lock('learning_cycle',blocking=True):
-  if read(ROOT/'continuous_policy.json').get('paused_by_user'):raise RuntimeError('paused_by_user')
+  if read(ROOT/'config/training/continuous.json').get('paused_by_user'):raise RuntimeError('paused_by_user')
   stop=threading.Event()
   def beat():
    while not stop.wait(30):update_state()

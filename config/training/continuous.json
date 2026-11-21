@@ -13,7 +13,5 @@
   "self_generated_answers_are_training_targets": false,
   "local_only": true,
   "training_coverage": "all_eligible_historical_and_new_training_rows_full_epoch",
-  "paused_by_user": false,
-  "paused_at": "2026-10-07T23:15:17+08:00",
-  "resumed_at": "2026-10-08T12:56:22.534178+08:00"
+  "paused_by_user": false
 }

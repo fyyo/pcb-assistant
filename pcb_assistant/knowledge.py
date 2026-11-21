@@ -417,7 +417,7 @@ def field_coverage(texts):
     }
 
 
-def build(source_run, output, policy_path=ROOT / 'agent_policy.json'):
+def build(source_run, output, policy_path=ROOT / 'config/knowledge.json'):
     source_run, output = Path(source_run), Path(output)
     policy = json.loads(Path(policy_path).read_text())
     if (policy.get('local_use_allowed') is not True or policy.get('external_services') is not False

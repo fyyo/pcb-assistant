@@ -26,7 +26,7 @@ def execute(command, root=ROOT):
 
 
 def cycle(root=ROOT, force=False):
-    policy = read(root / 'continuous_policy.json')
+    policy = read(root / 'config/training/continuous.json')
     if not policy['enabled']:
         update_state(root, state='paused' if policy.get('paused_by_user') else 'disabled')
         return
@@ -116,7 +116,7 @@ def watch(root=ROOT):
         try:
             while True:
                 try:
-                    policy = read(root / 'continuous_policy.json')
+                    policy = read(root / 'config/training/continuous.json')
                     if not policy['enabled']:
                         update_state(root, state='paused' if policy.get('paused_by_user') else 'disabled')
                         stop.wait(max(10, policy['poll_seconds']))
@@ -125,7 +125,7 @@ def watch(root=ROOT):
                     resume_case = (case_job.get('state') in ('prepared', 'training') or
                                    (case_job.get('state') == 'error' and case_job.get('retry_count', 0) < 3
                                     and time.time() - case_job.get('failed_at', 0) >=
-                                    read(root / 'continuous_policy.json')['failure_retry_hours'] * 3600))
+                                    read(root / 'config/training/continuous.json')['failure_retry_hours'] * 3600))
                     if resume_case:
                         execute([python_executable('.venv', root), '-m', 'pcb_assistant.training.cases', 'start'], root)
                         update_state(root)
@@ -137,7 +137,7 @@ def watch(root=ROOT):
                     update_state(root)
                 except Exception as exc:
                     update_state(root, state='retry_wait', error_type=type(exc).__name__)
-                stop.wait(max(10, read(root / 'continuous_policy.json')['poll_seconds']))
+                stop.wait(max(10, read(root / 'config/training/continuous.json')['poll_seconds']))
         finally:
             stop.set()
             thread.join(timeout=2)

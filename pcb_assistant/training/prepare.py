@@ -72,7 +72,7 @@ def instruction(piece):
 
 
 def prepare(source_run, output, holdout_fraction=.1):
-    policy = json.loads((ROOT / 'training_policy.json').read_text())
+    policy = json.loads((ROOT / 'config/training/policy.json').read_text())
     if policy.get('local_model_training_allowed') is not True or policy.get('mail_upload_allowed') is not False:
         raise ValueError('training_not_authorized')
     source_run, output = Path(source_run), Path(output)
