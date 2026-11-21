@@ -3,7 +3,7 @@ from collections import Counter,defaultdict
 from datetime import datetime,timezone
 import hashlib,json,re
 from pathlib import Path
-from learning_common import dump_json,digest_file
+from pcb_assistant.training.common import dump_json,digest_file
 from scripts.public_data.build_public_lamination import shingles
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'data/public_lamination_v2'

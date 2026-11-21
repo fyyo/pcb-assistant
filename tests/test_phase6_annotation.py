@@ -9,8 +9,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import phase6_annotation as annotation
-from phase6_contract import load_cases, validate_eval_cases
+import pcb_assistant.evaluation.annotation as annotation
+from pcb_assistant.interfaces.contract import load_cases, validate_eval_cases
 
 
 DOC_ID = 'MAIL_' + '1' * 32

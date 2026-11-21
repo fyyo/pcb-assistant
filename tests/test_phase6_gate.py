@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import unittest
 
-import phase6_gate as gate
-from phase6_contract import load_cases
+import pcb_assistant.interfaces.gate as gate
+from pcb_assistant.interfaces.contract import load_cases
 
 
 class Phase6GateTests(unittest.TestCase):

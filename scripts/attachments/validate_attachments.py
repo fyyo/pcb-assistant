@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 import re
 
-from learning_common import ROOT, digest_file, dump_json, emit
+from pcb_assistant.training.common import ROOT, digest_file, dump_json, emit
 
 
 def validate(directory):

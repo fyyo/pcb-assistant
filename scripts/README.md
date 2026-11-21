@@ -2,6 +2,8 @@
 
 日常使用从根目录 `knowledge_catalog.py` 和 `phase6_mcp.py` 进入；以下工具按需运行。
 
+可复用业务实现集中在 `pcb_assistant/`：邮件与 OCR 入口使用 `python -m pcb_assistant.ingestion.<模块>`，训练使用 `python -m pcb_assistant.training.<模块>`，评测与客户端验收使用 `python -m pcb_assistant.evaluation.<模块>`。本目录保留备份、数据修复、审计及公开资料维护工具；包内模块不要直接按文件路径运行。
+
 | 工具 | 用途 |
 | --- | --- |
 | `catalog_backup.py` | 创建、校验备份，恢复到新目录 |

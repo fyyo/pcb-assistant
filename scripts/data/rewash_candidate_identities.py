@@ -9,8 +9,8 @@ import re
 import shutil
 import time
 
-from candidate_privacy import CandidateIdentityCleaner
-from catalog_common import ROOT, digest_file
+from pcb_assistant.privacy.candidates import CandidateIdentityCleaner
+from pcb_assistant.catalog.common import ROOT, digest_file
 from scripts.data.derive_mail_candidates import build_identity_index, connect_archive
 
 

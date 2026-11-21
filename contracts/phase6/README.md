@@ -16,10 +16,10 @@
 ## 验证
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 -B phase6_contract.py --validate
-.venv\Scripts\python.exe -X utf8 -B phase6_eval.py --validate
-.venv\Scripts\python.exe -X utf8 -B phase6_annotation.py --status
-.venv\Scripts\python.exe -X utf8 -B phase6_mapping.py
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.contract --validate
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.cases --validate
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.annotation --status
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.mapping
 .venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --self-test
 .venv\Scripts\python.exe -X utf8 -B -m unittest -v tests.test_phase6_contract
 ```
@@ -27,9 +27,9 @@
 重新生成：
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 -B phase6_contract.py --write
-.venv\Scripts\python.exe -X utf8 -B phase6_mapping.py --write
-.venv\Scripts\python.exe -X utf8 -B phase6_annotation.py --template .tmp_work/phase6_annotations_draft.jsonl
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.contract --write
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.mapping --write
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.annotation --template .tmp_work/phase6_annotations_draft.jsonl
 ```
 
 ## 当前边界

@@ -8,10 +8,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from pcb_knowledge import digest_file
-from prepare_training import prepare, eligible, instruction
-from train_engineer import instruction_tokens
-from learn_local import recipe_matches, run as auto_learn
+from pcb_assistant.knowledge import digest_file
+from pcb_assistant.training.prepare import prepare, eligible, instruction
+from pcb_assistant.training.train import instruction_tokens
+from pcb_assistant.training.local import recipe_matches, run as auto_learn
 
 
 class FakeTokenizer:
@@ -64,7 +64,7 @@ class LearningTests(unittest.TestCase):
                 'selected_adapter': 'instruction_adapter',
                 'adapter_artifacts': {'instruction_adapter': {artifact.name: digest_file(artifact)}}}))
             (trained / 'inference_config.json').write_text(json.dumps({'adapter_scale': .25, 'adapter_sha256': digest_file(artifact)}))
-            with patch('learn_local.ROOT', root), patch('learn_local.subprocess.run') as subprocess_run, contextlib.redirect_stdout(io.StringIO()):
+            with patch('pcb_assistant.training.local.ROOT', root), patch('pcb_assistant.training.local.subprocess.run') as subprocess_run, contextlib.redirect_stdout(io.StringIO()):
                 auto_learn(source)
                 subprocess_run.assert_not_called()
             selected = json.loads((data / 'current_model.json').read_text())

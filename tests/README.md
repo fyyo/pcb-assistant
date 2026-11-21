@@ -40,6 +40,7 @@
 | 压合诊断 Agent | `test_agent_workflow.py`、`test_agent_scope.py`（CFRP 修补背景隔离、来源哈希、公开包及外部兜底）、`test_agent_evaluation.py`、`test_agent_calibration.py`、`test_agent_mcp.py` |
 | 导出 | `test_dify_export.py` |
 | 统一压合助手 | `test_pcb_assistant.py`（自动分流、上下文、引用与指纹）、`test_mcp_catalog_selection.py`（进程选库、附件、版本及真实 stdio） |
+| 命令入口 | `test_cli_entrypoints.py`（目录迁移后的模块启动、异目录兼容入口、可选工具帮助） |
 | Phase 6 | `test_phase6_*.py` |
 | 内部试用 | `test_internal_pilot_feedback.py`、`test_internal_pilot_review.py` |
 | 影子检索与建议复核 | `test_openviking_shadow.py`、`test_recommendation_review.py` |

@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from catalog_common import DEFAULT_CATALOG, digest_file
+from pcb_assistant.catalog.common import DEFAULT_CATALOG, digest_file
 from scripts.catalog_backup import MANIFEST, verify_backup
 
 DELIVERY = ROOT / '.private/project_records/database_maintenance_baseline.json'

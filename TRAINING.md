@@ -5,11 +5,11 @@
 依赖见 `requirements/requirements-training.txt`；其中 PyTorch/CUDA 需按本机环境匹配。`base_model.json` 登记底座信息和文件校验值，`training_policy.json` 定义训练策略。
 
 ```powershell
-python -X utf8 -B learn_local.py --help
-python -X utf8 -B learn_local.py --status
+python -X utf8 -B -m pcb_assistant.training.local --help
+python -X utf8 -B -m pcb_assistant.training.local --status
 
 # 明确选择已完成并获准训练的来源；会执行真实本地训练
-python -X utf8 -B learn_local.py --source-run data/my_training_source
+python -X utf8 -B -m pcb_assistant.training.local --source-run data/my_training_source
 ```
 
 训练使用领域文本和问答目标进行本地适配，完成后校验权重、评测和模型指针。相同来源已有匹配完成结果时可复用；来源和输出配置以脚本帮助和本机策略为准。

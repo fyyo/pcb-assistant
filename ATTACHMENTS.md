@@ -3,9 +3,9 @@
 处理自有 PST 前，安装基础清洗依赖和附件依赖，并核对 `privacy_policy.json`、`attachment_policy.json` 与来源路径。PST 读取需要本机可用的 libpff，部分旧 Office 格式需要额外解析工具。
 
 ```powershell
-python -X utf8 -B sanitize_pst.py --help
-python -X utf8 -B sanitize_attachments.py --help
-python -X utf8 -B sanitize_attachments.py <自有PST路径> --run-name attachments_new --workers 4
+python -X utf8 -B -m pcb_assistant.ingestion.mail --help
+python -X utf8 -B -m pcb_assistant.ingestion.attachments --help
+python -X utf8 -B -m pcb_assistant.ingestion.attachments <自有PST路径> --run-name attachments_new --workers 4
 python -m scripts.attachments.validate_attachments --run data/attachments_new
 ```
 

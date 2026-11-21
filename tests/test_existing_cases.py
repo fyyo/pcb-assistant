@@ -4,8 +4,8 @@ import tempfile
 import unittest
 
 from scripts.audits.audit_existing_cases import audit, classify
-from continuous_common import read
-from continuous_data import rows
+from pcb_assistant.training.storage import read
+from pcb_assistant.training.data import rows
 from .test_continuous import foundation_fixture
 
 

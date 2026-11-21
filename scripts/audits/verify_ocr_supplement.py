@@ -6,11 +6,11 @@ import json
 from pathlib import Path
 import sqlite3
 
-from catalog_common import ROOT,digest_file,stable_id,connect_readonly
+from pcb_assistant.catalog.common import ROOT,digest_file,stable_id,connect_readonly
 from scripts.data.derive_mail_candidates import build_identity_index,connect_archive,write_json
-from ocr_candidate_privacy import OcrTextSanitizer
+from pcb_assistant.privacy.ocr import OcrTextSanitizer
 from scripts.data.rewash_candidate_identities import read_rows,snapshot
-from supplement_attachment_ocr import ARCHIVE,validate_checkpoint_result,text_pieces,emit
+from pcb_assistant.ingestion.ocr import ARCHIVE,validate_checkpoint_result,text_pieces,emit
 
 
 def require(condition,code):
@@ -104,7 +104,7 @@ def verify(output,inventory,catalog=None,base=None):
         'original_source_files_unchanged':True,'external_services':False,
         'inventory_gaps':inv['statistics'],'catalog':None}
     if catalog:
-        from knowledge_catalog import validate,growth
+        from pcb_assistant.catalog.cli import validate,growth
         validation=validate(catalog)
         require(validation['status']=='passed','candidate_catalog_validation_failed')
         with closing(connect_readonly(catalog)) as con:

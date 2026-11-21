@@ -14,7 +14,7 @@ from unittest.mock import patch
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 from agent.cli import main
 from agent.models import fingerprint_result

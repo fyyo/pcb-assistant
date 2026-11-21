@@ -7,9 +7,9 @@ from pathlib import Path
 import random
 import re
 
-from learning_common import ROOT, dump_json, emit
-from model_chat import LearnedEngineer
-from train_engineer import jsonl, instruction_tokens
+from pcb_assistant.training.common import ROOT, dump_json, emit
+from pcb_assistant.training.inference import LearnedEngineer
+from pcb_assistant.training.train import jsonl, instruction_tokens
 
 CALIBRATION = [
     {'question': '请复述这些试验条件，不增加新数值：温度180°C，压力25 bar，保温60 min。', 'numbers': [180, 25, 60]},

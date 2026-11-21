@@ -37,7 +37,7 @@ python -m venv .venv
 
 从自有资料构建时，先按[邮件与附件处理说明](ATTACHMENTS.md)准备脱敏来源，再查看 `knowledge_catalog.py build --help` 和 `ingest --help`。导入和增量处理使用新目录，保留原始来源。
 
-本机默认目录在 `catalog_common.py` 中配置为 `data/phase3_catalog_v9`。其他机器可直接通过参数选库。
+本机默认目录在 `pcb_assistant/catalog/common.py` 中配置为 `data/phase3_catalog_v9`。其他机器可直接通过参数选库。
 
 ## 使用
 
@@ -61,9 +61,12 @@ python -m venv .venv
 
 | 位置 | 内容 |
 | --- | --- |
-| `knowledge_catalog.py` | Catalog CLI：构建、检索、证据、对话与增量操作 |
-| `phase6_mcp.py`、`pcb_assistant.py` | 统一 MCP 与问答分流 |
-| `catalog_*.py`、`pcb_*.py` | 数据库、检索、引用与表格能力 |
+| `knowledge_catalog.py`、`phase6_mcp.py` | CLI 与 MCP 启动入口，保留已有启动命令 |
+| `pcb_assistant/catalog/` | 数据库、版本、检索、证据与对话 |
+| `pcb_assistant/materials/`、`pcb_assistant/tables/` | 材料术语、选型、表格定位与字段追问 |
+| `pcb_assistant/interfaces/`、`pcb_assistant/router.py` | MCP、接口契约与问答分流 |
+| `pcb_assistant/ingestion/`、`pcb_assistant/privacy/` | 邮件、附件、OCR 与隐私处理 |
+| `pcb_assistant/training/`、`pcb_assistant/evaluation/` | 可选训练、标注、评测与客户端验收 |
 | `agent/` | 压合诊断、评测与后台任务 |
 | `scripts/` | 备份、审计、公开资料与训练维护工具 |
 | `cases/`、`contracts/` | 合成案例与接口契约 |
@@ -72,6 +75,8 @@ python -m venv .venv
 | `requirements/` | 按用途拆分的依赖清单 |
 
 `data/`、`.private/`、`models/`、`.venv/`、`.tmp_work/` 和 `dist/` 属于本机内容，已被 Git 忽略。历史开发记录保存在本机 `.private/project_records/`。
+
+内部模块按功能归入 `pcb_assistant/`。运行包内工具使用 `python -m pcb_assistant.<子包>.<模块>`，例如 `python -m pcb_assistant.evaluation.stdio_trial --help`；不要直接执行包内文件路径。原有两个根目录入口及 `python -m agent.mcp` 继续可用。迁移说明见[架构概览](docs/ARCHITECTURE.md)。
 
 ## 测试与维护
 

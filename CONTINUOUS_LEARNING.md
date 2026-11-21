@@ -3,11 +3,11 @@
 持续学习把自有案例整理、候选训练、新旧模型比较和模型指针更新组合成独立本地流程。日常证据问答不会因为一次对话就自动更新模型权重。
 
 ```powershell
-python -X utf8 -B continuous_learning.py --help
-python -X utf8 -B continuous_learning.py status
-python -X utf8 -B continuous_learning.py submit --help
-python -X utf8 -B continuous_learning.py once --help
-python -X utf8 -B learning_service.py --help
+python -X utf8 -B -m pcb_assistant.training.worker --help
+python -X utf8 -B -m pcb_assistant.training.worker status
+python -X utf8 -B -m pcb_assistant.training.worker submit --help
+python -X utf8 -B -m pcb_assistant.training.worker once --help
+python -X utf8 -B -m pcb_assistant.training.service --help
 ```
 
 提交真实案例时区分观察输入、结论和验证依据；不把助手的候选原因当成现场事实。数据检查、分组划分、训练触发条件和升级阈值由 `continuous_policy.json` 及相关策略决定。

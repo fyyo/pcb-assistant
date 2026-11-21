@@ -22,7 +22,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from catalog_common import (
+from pcb_assistant.catalog.common import (
     CATALOG_JSONL_EXPORT_BASES, CATALOG_JSONL_EXPORTS,
     LEGACY_CATALOG_JSONL_EXPORTS, ROOT, digest_file, read_json,
 )
@@ -165,7 +165,7 @@ def compress_catalog(catalog: Path, root: Path = ROOT) -> dict:
             results.append({"name": name, **details})
         _update_readme(readme_path)
         _refresh_manifest(catalog, excluded_names=LEGACY_CATALOG_JSONL_EXPORTS)
-        from knowledge_catalog import validate
+        from pcb_assistant.catalog.cli import validate
         validation = validate(catalog)
         if validation.get("status") != "passed":
             raise CatalogCompressionError("catalog_validation_failed")

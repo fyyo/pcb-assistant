@@ -26,7 +26,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from catalog_common import CatalogError, DEFAULT_CATALOG, connect_readonly
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG, connect_readonly
 
 
 EXPORT_SCHEMA = "pcb-openviking-shadow-export-v1"

@@ -4,8 +4,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from candidate_privacy import CandidateIdentityCleaner
-from catalog_common import digest_file
+from pcb_assistant.privacy.candidates import CandidateIdentityCleaner
+from pcb_assistant.catalog.common import digest_file
 from scripts.data.rewash_candidate_identities import repair_run, read_rows
 
 

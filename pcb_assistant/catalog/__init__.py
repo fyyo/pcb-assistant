@@ -1,0 +1,1 @@
+"""PCB assistant catalog modules."""

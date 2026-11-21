@@ -10,9 +10,9 @@ import sqlite3
 import tempfile
 import unittest
 
-from catalog_build import PRIMARY_INPUTS, build, source_snapshots
-from catalog_common import CatalogError, connect_readonly, digest_file, digest_text, json_text, normalize_text, stable_id
-from knowledge_catalog import filtered_statistics, related, search, status, validate
+from pcb_assistant.catalog.build import PRIMARY_INPUTS, build, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, connect_readonly, digest_file, digest_text, json_text, normalize_text, stable_id
+from pcb_assistant.catalog.cli import filtered_statistics, related, search, status, validate
 
 
 def write_json(path, value):

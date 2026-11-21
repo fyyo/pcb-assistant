@@ -5,8 +5,8 @@ import io
 import json
 import unittest
 
-import phase6_contract as contract
-import phase6_mcp as mcp
+import pcb_assistant.interfaces.contract as contract
+import pcb_assistant.interfaces.mcp as mcp
 from tests.phase6_test_fixtures import SyntheticCatalogTestCase, DOC_ID, MAIL_ID
 
 

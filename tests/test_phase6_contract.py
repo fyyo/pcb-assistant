@@ -6,9 +6,9 @@ import json
 from pathlib import Path
 import unittest
 
-import phase6_contract as contract
-import phase6_mapping as mapping
-from phase6_eval import build_cases
+import pcb_assistant.interfaces.contract as contract
+import pcb_assistant.interfaces.mapping as mapping
+from pcb_assistant.evaluation.cases import build_cases
 
 
 class Phase6ContractTests(unittest.TestCase):

@@ -8,8 +8,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import phase6_managed
-import phase6_managed_trial as trial
+import pcb_assistant.interfaces.managed as phase6_managed
+import pcb_assistant.evaluation.managed_trial as trial
 from tests.phase6_test_fixtures import SyntheticCatalogTestCase
 
 

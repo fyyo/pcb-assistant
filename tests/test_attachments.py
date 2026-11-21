@@ -9,10 +9,10 @@ import time
 from unittest.mock import patch
 import zipfile
 
-from attachment_extract import extract_attachment, file_kind
-from mail_privacy import IdentityIndex, Sanitizer
-from combine_training_sources import filter_ocr_text
-from sanitize_attachments import cache_reusable
+from pcb_assistant.ingestion.extract import extract_attachment, file_kind
+from pcb_assistant.privacy.mail import IdentityIndex, Sanitizer
+from pcb_assistant.training.sources import filter_ocr_text
+from pcb_assistant.ingestion.attachments import cache_reusable
 
 
 class AttachmentTests(unittest.TestCase):
@@ -37,7 +37,7 @@ class AttachmentTests(unittest.TestCase):
 
     def test_private_gpu_ipc_cleans_temporary_payloads(self):
         from PIL import Image
-        import gpu_ocr_client
+        import pcb_assistant.ingestion.ocr_client as gpu_ocr_client
         with tempfile.TemporaryDirectory(prefix='pcb-gpu-ocr-') as folder:
             queue = Path(folder)
             config = queue / 'config.json'

@@ -9,8 +9,8 @@ import unittest
 from unittest import mock
 from urllib.error import HTTPError
 
-import catalog_chat
-import phase6_managed as managed
+import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.interfaces.managed as managed
 from tests.phase6_test_fixtures import SyntheticCatalogTestCase
 
 

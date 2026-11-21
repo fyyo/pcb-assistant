@@ -3,15 +3,15 @@ from contextlib import closing
 import json
 import unittest
 
-from catalog_chat import ChatSession,fingerprint_chat_result
-from catalog_common import connect_readonly,digest_file
-from pcb_table_followup import resolve_table_scope,is_table_scope_request
-from pcb_table_context import scoped_table_spans
-from catalog_evidence import _excerpts_for_text
-from pcb_stackup_checklist import stackup_block_checks
+from pcb_assistant.catalog.chat import ChatSession,fingerprint_chat_result
+from pcb_assistant.catalog.common import connect_readonly,digest_file
+from pcb_assistant.tables.followup import resolve_table_scope,is_table_scope_request
+from pcb_assistant.tables.context import scoped_table_spans
+from pcb_assistant.catalog.evidence import _excerpts_for_text
+from pcb_assistant.tables.checklist import stackup_block_checks
 from tests import test_stackup_retrieval as fixtures
 Q,BODY,HEADER=fixtures.Q,fixtures.BODY,fixtures.HEADER
-import phase6_mcp as mcp
+import pcb_assistant.interfaces.mcp as mcp
 
 DOC='KNOWLEDGE_'+'a'*32
 OTHER='KNOWLEDGE_'+'b'*32

@@ -6,7 +6,7 @@ from typing import Any
 
 from .models import CaseInput
 from .taxonomy import DEFECT_MODES, detect_defects, resolve_defect, term_present
-from pcb_knowledge import query_context_groups
+from pcb_assistant.knowledge import query_context_groups
 
 
 DOMAIN_TERMS = (

@@ -7,7 +7,7 @@ import math
 from typing import Protocol
 from urllib.parse import urlparse
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 
 class EvidenceProvider(Protocol):

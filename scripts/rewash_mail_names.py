@@ -12,7 +12,7 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from mail_privacy import redact_residual_person_names
+from pcb_assistant.privacy.mail import redact_residual_person_names
 
 
 def digest_file(path: Path) -> str:
@@ -107,7 +107,7 @@ def process_run(source: Path, output: Path) -> dict:
     report = dict(source_report)
     report["status"] = "completed_local_candidates_require_review"
     report["rewash"] = {
-        "rule": "mail_privacy.redact_residual_person_names",
+        "rule": 'pcb_assistant.privacy.mail.redact_residual_person_names',
         "source_run": source.name,
         "output_run": output.name,
         "rows_scanned": stats["rows_scanned"],
@@ -159,7 +159,7 @@ def main() -> int:
         results.append(process_run(Path(source), Path(output)))
     write_json(args.report, {
         "status": "completed",
-        "rule": "mail_privacy.redact_residual_person_names",
+        "rule": 'pcb_assistant.privacy.mail.redact_residual_person_names',
         "scope": "existing sanitized candidates; original PSTs were not reopened",
         "runs": results,
         "totals": {

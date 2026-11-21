@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from catalog_common import jsonl_records
+from pcb_assistant.catalog.common import jsonl_records
 from scripts.compress_catalog_jsonl import CatalogCompressionError, compress_jsonl_file
 
 

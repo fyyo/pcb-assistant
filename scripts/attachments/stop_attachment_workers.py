@@ -18,7 +18,7 @@ def find_workers():
             if path.stat().st_uid != os.getuid() or (path / 'cwd').resolve() != ROOT:
                 continue
             args = (path / 'cmdline').read_bytes().decode().split('\0')
-            if any(Path(value).name == 'sanitize_attachments.py' for value in args[1:3]):
+            if 'pcb_assistant.ingestion.attachments' in args[1:4]:
                 found.append(int(path.name))
         except (OSError, UnicodeError):
             continue

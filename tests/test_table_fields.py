@@ -3,13 +3,13 @@ import json
 import unittest
 from unittest.mock import Mock
 
-from catalog_chat import ChatSession,fingerprint_chat_result
-from pcb_table_fields import requested_table_fields,focused_fields,table_field_checks,field_check_lines
-from pcb_table_followup import resolve_table_scope
-from pcb_stackup_checklist import stackup_block_checks
+from pcb_assistant.catalog.chat import ChatSession,fingerprint_chat_result
+from pcb_assistant.tables.fields import requested_table_fields,focused_fields,table_field_checks,field_check_lines
+from pcb_assistant.tables.followup import resolve_table_scope
+from pcb_assistant.tables.checklist import stackup_block_checks
 from tests import test_stackup_checklist as cells
 from tests import test_stackup_retrieval as fixtures
-import phase6_mcp as mcp
+import pcb_assistant.interfaces.mcp as mcp
 
 DOC='KNOWLEDGE_'+'a'*32
 LOC='核对定位：来源 '+DOC+'；原表行29；区块列1–11。'

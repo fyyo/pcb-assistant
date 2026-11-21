@@ -11,8 +11,8 @@ import unittest
 from unittest.mock import patch
 import urllib.error
 
-from catalog_build import build
-from catalog_common import connect_readonly, digest_file
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.common import connect_readonly, digest_file
 from scripts.experimental.openviking_shadow import (
     DEFAULT_TARGET_URI,
     ShadowError,

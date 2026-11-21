@@ -7,8 +7,8 @@ import json
 from pathlib import Path
 import re
 
-from catalog_common import CatalogError
-from catalog_evidence import _excerpt_window
+from pcb_assistant.catalog.common import CatalogError
+from pcb_assistant.catalog.evidence import _excerpt_window
 
 from .models import canonical_json
 from .providers import _safe_url

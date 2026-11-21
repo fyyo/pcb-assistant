@@ -10,8 +10,8 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from phase6_annotation import case_fingerprint
-import phase6_severe_review as review
+from pcb_assistant.evaluation.annotation import case_fingerprint
+import pcb_assistant.evaluation.review as review
 
 
 BASE_CASE = {

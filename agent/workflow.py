@@ -5,8 +5,8 @@ from collections.abc import Mapping
 from pathlib import Path
 import re
 
-from catalog_common import CatalogError, DEFAULT_CATALOG
-from pcb_knowledge import query_context_groups
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG
+from pcb_assistant.knowledge import query_context_groups
 
 from .composer import render_answer
 from .gate import (

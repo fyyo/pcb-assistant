@@ -8,17 +8,17 @@ import unittest
 from functools import partial
 from types import SimpleNamespace
 from unittest.mock import patch
-import catalog_agent
-import phase6_candidates
+import pcb_assistant.catalog.agent as catalog_agent
+import pcb_assistant.evaluation.candidates as phase6_candidates
 from tests.phase6_test_fixtures import SyntheticCatalogTestCase
 
-from phase6_candidates import (
+from pcb_assistant.evaluation.candidates import (
     build_candidate,
     load_candidates,
     validate_candidates,
     write_candidates,
 )
-from phase6_contract import load_cases
+from pcb_assistant.interfaces.contract import load_cases
 
 
 def _has_key(value, key):

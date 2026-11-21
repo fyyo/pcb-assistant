@@ -13,10 +13,10 @@ import zipfile
 
 from PIL import Image
 
-from catalog_common import digest_file
-from ocr_image_sources import ImageEnumerator,image_fingerprint,image_eligibility
-from ocr_candidate_privacy import OcrTextSanitizer,OcrPrivacyRejected
-from supplement_attachment_ocr import sanitized_result,text_pieces,validate_checkpoint_result,publish_supplement
+from pcb_assistant.catalog.common import digest_file
+from pcb_assistant.ingestion.images import ImageEnumerator,image_fingerprint,image_eligibility
+from pcb_assistant.privacy.ocr import OcrTextSanitizer,OcrPrivacyRejected
+from pcb_assistant.ingestion.ocr import sanitized_result,text_pieces,validate_checkpoint_result,publish_supplement
 
 
 def png(size=(400,100),color='white'):
@@ -154,10 +154,10 @@ class OcrPrivacyTests(unittest.TestCase):
 
 class OcrPublicationTests(unittest.TestCase):
     def test_checkpoint_readback_publication_and_incremental_parent_relationship(self):
-        from catalog_build import build
-        from catalog_common import stable_id
-        from catalog_incremental import ingest
-        from knowledge_catalog import validate
+        from pcb_assistant.catalog.build import build
+        from pcb_assistant.catalog.common import stable_id
+        from pcb_assistant.catalog.incremental import ingest
+        from pcb_assistant.catalog.cli import validate
         from .test_catalog import fixture,write_rows
         with tempfile.TemporaryDirectory() as temporary:
             root=Path(temporary)
@@ -191,10 +191,10 @@ class OcrPublicationTests(unittest.TestCase):
                 con.commit()
                 # Close/reopen models the durable checkpoint resume path.
             with closing(sqlite3.connect(output/'checkpoint.sqlite3')) as con:
-                with patch('supplement_attachment_ocr.CLEAN_BASE',clean),patch(
-                        'supplement_attachment_ocr.verified_sources',return_value={}),patch(
-                        'supplement_attachment_ocr.verified_clean_base',return_value={}),patch(
-                        'supplement_attachment_ocr.snapshot',return_value={}),redirect_stdout(io.StringIO()):
+                with patch('pcb_assistant.ingestion.ocr.CLEAN_BASE',clean),patch(
+                        'pcb_assistant.ingestion.ocr.verified_sources',return_value={}),patch(
+                        'pcb_assistant.ingestion.ocr.verified_clean_base',return_value={}),patch(
+                        'pcb_assistant.ingestion.ocr.snapshot',return_value={}),redirect_stdout(io.StringIO()):
                     report=publish_supplement(output,inventory,con,cleaner,{}, {},Counter(),{}, {})
             self.assertEqual(report['statistics']['exported_units'],1)
             record=json.loads((output/'records.jsonl').read_text(encoding='utf-8'))

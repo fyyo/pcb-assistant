@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 
 import pypff
-from sanitize_pst import iter_messages, safe_property, write_json
+from pcb_assistant.ingestion.mail import iter_messages, safe_property, write_json
 
 ROOT = Path(__file__).resolve().parents[2]
 KNOWN = set('pdf xls xlsx xlsm doc docx ppt pptx txt csv rtf html htm jpg jpeg png gif bmp tif tiff zip rar 7z msg eml dwg dxf gbr gerber exe'.split())

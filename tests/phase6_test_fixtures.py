@@ -8,10 +8,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import catalog_chat
-import phase6_mcp
-from catalog_build import PRIMARY_INPUTS, build
-from catalog_common import digest_file, digest_text, stable_id
+import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.interfaces.mcp as phase6_mcp
+from pcb_assistant.catalog.build import PRIMARY_INPUTS, build
+from pcb_assistant.catalog.common import digest_file, digest_text, stable_id
 from tests.test_catalog import fixture, write_json, write_rows
 
 DOC_ID = stable_id('KNOWLEDGE', 'case', 'mail_a')

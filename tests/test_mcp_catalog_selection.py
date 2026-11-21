@@ -11,11 +11,12 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from catalog_build import ATTACHMENT_FILES, build
-from catalog_common import digest_file, stable_id
-import pcb_assistant
-import phase6_client_trial as trial
-import phase6_mcp as mcp
+from pcb_assistant.catalog.build import ATTACHMENT_FILES, build
+from pcb_assistant.catalog.common import digest_file, stable_id
+from pcb_assistant.paths import ROOT
+import pcb_assistant.router as pcb_assistant
+import pcb_assistant.evaluation.stdio_trial as trial
+import pcb_assistant.interfaces.mcp as mcp
 from tests.test_catalog import fixture, write_json, write_rows
 
 
@@ -164,7 +165,7 @@ class McpCatalogSelectionTests(unittest.TestCase):
         self.assertTrue(all(call['catalog_matches'] for call in result['calls']))
 
     def test_real_stdio_and_compatibility_alias_accept_an_explicit_directory(self):
-        root = Path(mcp.__file__).parent
+        root = ROOT
         requests = [
             {'jsonrpc': '2.0', 'id': 1, 'method': 'tools/list'},
             {'jsonrpc': '2.0', 'id': 2, 'method': 'tools/call', 'params': {
@@ -173,6 +174,7 @@ class McpCatalogSelectionTests(unittest.TestCase):
                 'name': 'pcb_answer', 'arguments': {'question': '读取文档及附件 ' + self.mail_id}}},
         ]
         for entry, cwd in [([str(root / 'phase6_mcp.py')], self.root),
+                           (['-m', 'pcb_assistant.interfaces.mcp'], root),
                            (['-m', 'agent.mcp'], root)]:
             with self.subTest(entry=entry):
                 completed = subprocess.run([sys.executable, '-X', 'utf8', '-B', *entry,

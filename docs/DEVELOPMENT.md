@@ -8,9 +8,9 @@ python -m venv .venv
 python -m pip install -r requirements/requirements-test.txt
 python -m pip check
 python -X utf8 -B -m unittest discover -v
-python -X utf8 -B phase6_contract.py --validate
-python -X utf8 -B phase6_eval.py --validate
-python -X utf8 -B phase6_mapping.py
+python -X utf8 -B -m pcb_assistant.interfaces.contract --validate
+python -X utf8 -B -m pcb_assistant.evaluation.cases --validate
+python -X utf8 -B -m pcb_assistant.interfaces.mapping
 ```
 
 上面使用 PowerShell 激活命令；Linux 使用 `source .venv/bin/activate`。若本机禁止执行激活脚本，直接使用虚拟环境中 Python 的完整路径运行命令即可。
@@ -36,16 +36,16 @@ GitHub 仓库创建后，可将 CI 的四个矩阵检查设为主分支合并条
 
 接口 schema、工具映射与合成评测骨架保存在 [contracts/phase6/](../contracts/phase6/README.md)。公开 MCP 只暴露 `pcb_answer`；其他工具定义服务于内部接口和兼容实现，不应照历史列表注册额外 MCP 工具。
 
-有自有 Catalog 时运行 `phase6_client_trial.py --catalog <目录> --json` 检查真实 stdio 子进程。`phase6_codex_preflight.py` 是可选真实客户端检查；本机 stdio 通过不等于任意客户端或模型回合已通过。
+有自有 Catalog 时运行 `python -m pcb_assistant.evaluation.stdio_trial --catalog <目录> --json` 检查真实 stdio 子进程。`python -m pcb_assistant.evaluation.codex_preflight` 是可选真实客户端检查；本机 stdio 通过不等于任意客户端或模型回合已通过。
 
 可选流程仍在源码中保留：
 
 | 工具 | 用途 |
 | --- | --- |
-| `phase6_annotation.py` | 独立标注 sidecar；候选不会自动成为 gold |
+| `pcb_assistant/evaluation/annotation.py` | 独立标注 sidecar；候选不会自动成为 gold |
 | `scripts/evaluation/internal_pilot_review.py` | 从合成默认案例或指定私有案例准备可选复核包 |
-| `phase6_severe_review.py` | 严重无依据结论的可选审查 |
-| `phase6_quality.py`、`phase6_release.py` | 本地评测与正式发布条件汇总 |
+| `pcb_assistant/evaluation/review.py` | 严重无依据结论的可选审查 |
+| `pcb_assistant/evaluation/quality.py`、`pcb_assistant/evaluation/release.py` | 本地评测与正式发布条件汇总 |
 | `scripts/experimental/openviking_shadow.py` | 隔离的公开候选导出和映射，不进入默认回答链路 |
 
 以上工具的输入要求和写入选项以各自 `--help` 为准。真实问题、答案、证据正文、标注和失败明细放入 `.private/`，不要加入源码或报告文档。

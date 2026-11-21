@@ -21,7 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mail_status import MessageStatusError, validate_message_status_rows
+from pcb_assistant.ingestion.mail_status import MessageStatusError, validate_message_status_rows
 
 
 DEFAULT_AUDIT = "docs/phase3_missing_reference_audit_20261021.json"

@@ -7,7 +7,7 @@ import json
 import unittest
 from unittest.mock import patch
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 from agent.cli import main
 from agent.gate import extract_facts
 from agent.models import fingerprint_result

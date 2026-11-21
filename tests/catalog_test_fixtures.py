@@ -6,8 +6,8 @@ import io
 import json
 from pathlib import Path
 
-from catalog_build import PRIMARY_INPUTS, build
-from catalog_common import digest_file
+from pcb_assistant.catalog.build import PRIMARY_INPUTS, build
+from pcb_assistant.catalog.common import digest_file
 from .test_catalog import fixture, write_json, write_rows
 
 

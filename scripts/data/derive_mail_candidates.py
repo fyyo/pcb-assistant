@@ -20,14 +20,14 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mail_privacy import (  # noqa: E402
+from pcb_assistant.privacy.mail import (  # noqa: E402
     EMAIL,
     IdentityIndex,
     IdentityMatcher,
     Sanitizer,
     technical_topics,
 )
-from mail_status import MESSAGE_STATUS_SCHEMA_VERSION, validate_message_status_rows  # noqa: E402
+from pcb_assistant.ingestion.mail_status import MESSAGE_STATUS_SCHEMA_VERSION, validate_message_status_rows  # noqa: E402
 
 
 SCHEMA_VERSION = 1

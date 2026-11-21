@@ -63,10 +63,10 @@
 
 ## 结构与维护
 
-- `phase6_mcp.py`：唯一协议实现，负责参数检查、输出脱敏、文本预算和信封。
-- `pcb_assistant.py`：内部自动分流和病例上下文合并。
+- `phase6_mcp.py`：兼容启动入口，唯一协议实现在 `pcb_assistant/interfaces/mcp.py`，负责参数检查、输出脱敏、文本预算和信封。
+- `pcb_assistant/router.py`：内部自动分流和病例上下文合并。
 - `agent.workflow.diagnose()`：诊断业务逻辑，继续供 CLI 和无标签评测复用。
-- `phase6_managed.answer()`：知识问答及已有的可选托管综合。
+- `pcb_assistant.interfaces.managed.answer()`：知识问答及已有的可选托管综合。
 - 原有 7 个底层操作保留为本地维护能力及内部函数，不再对外提供 MCP 工具。
 
 外层沿用 `pcb-agent-v1` 信封。知识与诊断回答保持统一的 `answer`、`citations`、`missing_information`、`clarifying_questions`、引用校验和结果指纹；诊断细节保存在 `result.diagnosis`，内部路由记录在 `result.workflow`。诊断的 `insufficient_evidence` 映射为外层 `no_evidence`，细分状态仍保存在诊断结果中。

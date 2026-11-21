@@ -5,9 +5,9 @@ from pathlib import Path
 from contextlib import closing
 import json
 
-from catalog_common import CatalogError, DEFAULT_CATALOG, connect_readonly
-from catalog_evidence import evidence
-from pcb_knowledge import term_groups
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG, connect_readonly
+from pcb_assistant.catalog.evidence import evidence
+from pcb_assistant.knowledge import term_groups
 from .source_policy import is_ocr_evidence, public_source_tier
 
 

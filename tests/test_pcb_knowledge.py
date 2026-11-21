@@ -6,7 +6,7 @@ import time
 import unittest
 from unittest.mock import patch
 
-import pcb_knowledge
+import pcb_assistant.knowledge as pcb_knowledge
 
 
 class FakeTokenizer:

@@ -4,9 +4,11 @@
 
 已删除一次性的 `finalize_candidate_contacts.py`、`restore_candidate_codes.py`、`finish_ocr_candidate.py`、`rewash_historical_identities.py`，以及绑定旧资产快照的 `scripts/verify_phase3_assets.py` 和对应测试。当前隐私清洗、工程代码保留、OCR、增量入库与备份能力继续保留；本机历史文档和报告已移入 `.private/project_records/`。
 
-整理后的源码包位于本机 `.private/github_prepare_20261116/pcb-source.zip`，包含源码、合成案例和文档，可解压后作为独立源码目录使用；不会将私有资料带到新目录。
+源码以当前 Git 提交为准。本机 `.private/github_prepare_20261116/pcb-source.zip` 是历史快照，未包含后续修正和目录迁移；不要将它作为当前版本重新发布。
 
 Python 工具按用途归入 `scripts/data/`、`scripts/audits/`、`scripts/evaluation/` 和 `scripts/experimental/`，运行方式见[脚本目录](../scripts/README.md)。已退役无业务调用的旧 `catalog_diagnostics.py`、`catalog_snapshot_cache.py` 及其专属测试；原文件保存在本机 `.private/python_cleanup_20261117/original/`。
+
+业务模块现按职责归入 `pcb_assistant/`，根目录只保留 CLI 与 MCP 启动入口。评测、训练和数据处理命令使用 `python -m pcb_assistant.<子包>.<模块>`，现有 CLI／MCP 启动配置继续可用；Python 导入迁移见[架构说明](ARCHITECTURE.md)。
 
 ## 本地提交
 

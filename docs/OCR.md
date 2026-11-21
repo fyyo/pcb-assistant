@@ -1,10 +1,10 @@
 # 附件图片 OCR
 
-`supplement_attachment_ocr.py` 在本机盘点图片、运行 OCR 并生成可增量导入的来源。`ocr_image_sources.py` 负责图像枚举与去重，`ocr_candidate_privacy.py` 负责 OCR 文本隐私处理。
+`pcb_assistant/ingestion/ocr.py` 在本机盘点图片、运行 OCR 并生成可增量导入的来源。`pcb_assistant/ingestion/images.py` 负责图像枚举与去重，`pcb_assistant/privacy/ocr.py` 负责 OCR 文本隐私处理。
 
 ```powershell
-python -X utf8 -B supplement_attachment_ocr.py inventory --help
-python -X utf8 -B supplement_attachment_ocr.py run --help
+python -X utf8 -B -m pcb_assistant.ingestion.ocr inventory --help
+python -X utf8 -B -m pcb_assistant.ingestion.ocr run --help
 python -X utf8 -B -m scripts.audits.verify_ocr_supplement --help
 ```
 

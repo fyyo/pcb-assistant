@@ -6,7 +6,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import phase6_client_trial as trial
+import pcb_assistant.evaluation.stdio_trial as trial
 from tests.phase6_test_fixtures import SyntheticCatalogTestCase
 
 

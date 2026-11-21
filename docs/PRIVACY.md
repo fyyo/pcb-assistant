@@ -1,6 +1,6 @@
 # 本地隐私处理与候选修复
 
-原始邮件和附件仅在本机处理。`sanitize_pst.py`、`sanitize_attachments.py` 负责初次清洗；`candidate_privacy.py`、`scripts/data/rewash_candidate_identities.py`、`scripts/data/rewash_case_identities.py` 用于已脱敏候选的修复。
+原始邮件和附件仅在本机处理。`pcb_assistant/ingestion/mail.py`、`pcb_assistant/ingestion/attachments.py` 负责初次清洗；`pcb_assistant/privacy/candidates.py`、`scripts/data/rewash_candidate_identities.py`、`scripts/data/rewash_case_identities.py` 用于已脱敏候选的修复。
 
 修复保留已有占位符、原始换行、工艺数字、单位、工程代码与来源关系；候选回读发现残留或保留校验失败时中止。案例修复同步维护引用片段的偏移。具体参数使用相应脚本的 `--help` 查看，输出目录应为新目录。
 

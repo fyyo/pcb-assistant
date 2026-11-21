@@ -9,7 +9,7 @@ from unittest.mock import patch
 from agent import jobs
 from agent.cli import main
 from agent.evaluation import EVAL_SCHEMA
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 
 def write_suite(path: Path) -> None:

@@ -8,16 +8,16 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import catalog_evidence
-from catalog_build import build
-from catalog_common import connect_readonly, digest_file
-from catalog_chat import ChatSession, fingerprint_chat_result
-from catalog_evidence import MAX_EXCERPT_CHARS, _excerpts_for_text, evidence
-from pcb_knowledge import is_knowledge_question, term_groups, tokens
-from pcb_selection import (
+import pcb_assistant.catalog.evidence as catalog_evidence
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.common import connect_readonly, digest_file
+from pcb_assistant.catalog.chat import ChatSession, fingerprint_chat_result
+from pcb_assistant.catalog.evidence import MAX_EXCERPT_CHARS, _excerpts_for_text, evidence
+from pcb_assistant.knowledge import is_knowledge_question, term_groups, tokens
+from pcb_assistant.materials.selection import (
     condition_in_text, is_selection_question, selection_conditions, selection_coverage,
 )
-import pcb_assistant
+import pcb_assistant.router as pcb_assistant
 from tests.test_catalog import fixture
 
 
