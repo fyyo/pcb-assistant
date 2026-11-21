@@ -8,10 +8,10 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-import catalog_chat
-import phase6_mcp
-from catalog_build import PRIMARY_INPUTS, build
-from catalog_common import digest_file, digest_text, stable_id
+import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.interfaces.mcp as phase6_mcp
+from pcb_assistant.catalog.build import PRIMARY_INPUTS, build
+from pcb_assistant.catalog.common import digest_file, digest_text, stable_id
 from tests.test_catalog import fixture, write_json, write_rows
 
 DOC_ID = stable_id('KNOWLEDGE', 'case', 'mail_a')
@@ -65,3 +65,22 @@ class SyntheticCatalogTestCase(unittest.TestCase):
         context = phase6_mcp._catalog_context(cls.catalog)
         context.__enter__()
         cls.addClassCleanup(context.__exit__, None, None, None)
+
+
+class SyntheticManagedCatalogTestCase(SyntheticCatalogTestCase):
+    """Use real privacy rules with authored NER fixtures, without model downloads."""
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import spacy
+        import pcb_assistant.interfaces.managed as managed
+        from pcb_assistant.privacy.mail import IdentityIndex, Sanitizer
+
+        zh = spacy.blank('zh')
+        en = spacy.blank('en')
+        zh.add_pipe('entity_ruler').add_patterns([{'label': 'PERSON', 'pattern': '测试小甲'}])
+        en.add_pipe('entity_ruler').add_patterns([{'label': 'PERSON', 'pattern': 'Fixture Person'}])
+        patcher = patch.object(managed, '_SANITIZER_COMPONENTS',
+                               (IdentityIndex().pattern(), Sanitizer, zh, en))
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)

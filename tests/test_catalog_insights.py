@@ -11,10 +11,10 @@ import threading
 import unittest
 from unittest.mock import patch
 
-import catalog_insights as insights
-from catalog_build import PRIMARY_INPUTS, build, source_snapshots
-from catalog_common import CatalogError, digest_file, stable_id
-from catalog_insights import (_relationship_graph, relationship_paths, similar_cases,
+import pcb_assistant.catalog.insights as insights
+from pcb_assistant.catalog.build import PRIMARY_INPUTS, build, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, digest_file, stable_id
+from pcb_assistant.catalog.insights import (_relationship_graph, relationship_paths, similar_cases,
     warm_insights, warm_relationship_graph, warm_similar_cases)
 from .test_catalog import fixture, write_json, write_rows
 
@@ -276,7 +276,7 @@ class CatalogInsightsTests(unittest.TestCase):
             release.wait(5)
             return original(directory)
 
-        with patch("catalog_insights.warm_insights", side_effect=delayed_warmup):
+        with patch('pcb_assistant.catalog.insights.warm_insights', side_effect=delayed_warmup):
             first = insights.warm_insights_async(self.output)
             self.assertTrue(started.wait(5))
             second = insights.warm_insights_async(self.output)
@@ -326,7 +326,7 @@ class CatalogInsightsTests(unittest.TestCase):
         self._clear_insight_caches(remove_persistent=True)
         counts = warm_insights(self.output)
         self._clear_insight_caches()
-        with patch("catalog_insights.connect_readonly",
+        with patch('pcb_assistant.catalog.insights.connect_readonly',
                    side_effect=AssertionError("database should not be opened")):
             loaded = warm_insights(self.output)
         self.assertEqual(loaded, counts)
@@ -337,7 +337,7 @@ class CatalogInsightsTests(unittest.TestCase):
         cache = insights.insight_cache_path(self.output)
         cache.write_text("{broken json", encoding="utf-8")
         self._clear_insight_caches()
-        with patch("catalog_insights.connect_readonly",
+        with patch('pcb_assistant.catalog.insights.connect_readonly',
                    wraps=insights.connect_readonly) as connect:
             rebuilt = warm_insights(self.output)
         self.assertEqual(rebuilt, counts)
@@ -354,7 +354,7 @@ class CatalogInsightsTests(unittest.TestCase):
         payload["catalog_size"] -= 1
         cache.write_text(json.dumps(payload), encoding="utf-8")
         self._clear_insight_caches()
-        with patch("catalog_insights.connect_readonly",
+        with patch('pcb_assistant.catalog.insights.connect_readonly',
                    wraps=insights.connect_readonly) as connect:
             rebuilt = warm_insights(self.output)
         self.assertEqual(rebuilt, counts)

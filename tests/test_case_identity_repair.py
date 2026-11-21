@@ -8,10 +8,10 @@ import sqlite3
 import tempfile
 import unittest
 
-from candidate_privacy import CandidateIdentityCleaner
-from catalog_build import build, normalize_case_source, primary_inputs, source_snapshots
-from catalog_common import CatalogError, connect_readonly, digest_file, digest_text, json_text, stable_id
-from pcb_knowledge import tokens
+from pcb_assistant.privacy.candidates import CandidateIdentityCleaner
+from pcb_assistant.catalog.build import build, normalize_case_source, primary_inputs, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, connect_readonly, digest_file, digest_text, json_text, stable_id
+from pcb_assistant.knowledge import tokens
 from scripts.data.rewash_candidate_identities import read_rows
 from scripts.data.rewash_case_identities import OffsetRepair, repair_cases
 from tests.test_catalog import fixture, write_json, write_rows

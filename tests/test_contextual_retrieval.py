@@ -11,17 +11,17 @@ import unittest
 from agent.gate import extract_facts
 from agent.models import CaseInput
 from agent.workflow import diagnose
-from catalog_build import build
-from catalog_chat import ChatSession, fingerprint_chat_result
-from catalog_common import connect_readonly, digest_file
-from catalog_evidence import MAX_EXCERPT_CHARS, _excerpts_for_text, evidence, fingerprint_result
-import pcb_assistant
-from pcb_knowledge import (
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.chat import ChatSession, fingerprint_chat_result
+from pcb_assistant.catalog.common import connect_readonly, digest_file
+from pcb_assistant.catalog.evidence import MAX_EXCERPT_CHARS, _excerpts_for_text, evidence, fingerprint_result
+import pcb_assistant.router as pcb_assistant
+from pcb_assistant.knowledge import (
     is_explanation_question, is_knowledge_question, query_terms, term_groups, tokens,
 )
 from tests.test_agent_workflow import FakeRetriever, evidence_item
 from tests.test_catalog import fixture
-from pcb_material_concepts import definition_keys, material_concepts, material_gap_lines
+from pcb_assistant.materials.concepts import definition_keys, material_concepts, material_gap_lines
 
 
 class ContextualRetrievalTests(unittest.TestCase):

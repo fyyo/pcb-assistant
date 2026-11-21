@@ -4,7 +4,7 @@ import json
 from pathlib import Path
 import fitz
 from bs4 import BeautifulSoup
-from learning_common import dump_json
+from pcb_assistant.training.common import dump_json
 ROOT=Path(__file__).resolve().parents[2]
 OUT=ROOT/'data/public_lamination_v2'
 

@@ -9,8 +9,8 @@ import sys
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from catalog_common import DEFAULT_CATALOG
-from catalog_evaluation import evaluate_similar_cases
+from pcb_assistant.catalog.common import DEFAULT_CATALOG
+from pcb_assistant.catalog.evaluation import evaluate_similar_cases
 
 
 def main():

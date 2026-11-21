@@ -3,7 +3,7 @@ import re
 import unittest
 from types import SimpleNamespace
 
-from mail_privacy import (IdentityIndex, Sanitizer, normalize, opaque_id,
+from pcb_assistant.privacy.mail import (IdentityIndex, Sanitizer, normalize, opaque_id,
                           redact_residual_person_names, technical_topics)
 
 

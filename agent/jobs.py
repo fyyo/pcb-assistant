@@ -12,7 +12,7 @@ import ctypes
 from datetime import datetime, timezone
 from typing import Any
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 from .evaluation import evaluate_file, render_summary, write_report
 from .models import canonical_json

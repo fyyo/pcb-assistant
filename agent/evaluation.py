@@ -11,7 +11,7 @@ from pathlib import Path
 import time
 from typing import Any
 
-from catalog_common import CatalogError, DEFAULT_CATALOG
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG
 
 from .gate import MISSING_FACT_PROMPTS
 from .models import AGENT_SCHEMA, CaseInput, canonical_json

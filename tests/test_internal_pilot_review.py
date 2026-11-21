@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from phase6_annotation import case_fingerprint
+from pcb_assistant.evaluation.annotation import case_fingerprint
 import scripts.evaluation.internal_pilot_review as review
 
 

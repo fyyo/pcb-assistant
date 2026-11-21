@@ -10,9 +10,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from catalog_build import build
-from catalog_common import CatalogError, connect_readonly, digest_file
-from catalog_evidence import (
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.common import CatalogError, connect_readonly, digest_file
+from pcb_assistant.catalog.evidence import (
     FINGERPRINT_ALGORITHM,
     EXCERPT_OFFSET_UNIT,
     MAX_EXCERPT_CHARS,
@@ -23,8 +23,8 @@ from catalog_evidence import (
     export_evidence,
     fingerprint_result,
 )
-from knowledge_catalog import main as catalog_main, status
-from pcb_knowledge import field_coverage
+from pcb_assistant.catalog.cli import main as catalog_main, status
+from pcb_assistant.knowledge import field_coverage
 from .test_catalog import fixture
 
 

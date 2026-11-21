@@ -9,9 +9,9 @@ import unittest
 from unittest import mock
 from urllib.error import HTTPError
 
-import catalog_chat
-import phase6_managed as managed
-from tests.phase6_test_fixtures import SyntheticCatalogTestCase
+import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.interfaces.managed as managed
+from tests.phase6_test_fixtures import SyntheticManagedCatalogTestCase
 
 
 EXCERPT_ID = 'EXC_aaaaaaaaaaaaaaaaaaaaaaaa'
@@ -87,7 +87,25 @@ def _run_answer(*, mode='managed', env=None, provider_class=FakeProvider):
     )
 
 
-class Phase6ManagedTests(SyntheticCatalogTestCase):
+class Phase6ManagedTests(SyntheticManagedCatalogTestCase):
+    def test_missing_privacy_models_block_egress_without_provider_request(self):
+        with mock.patch.object(managed, '_SANITIZER_COMPONENTS', None), \
+                mock.patch('spacy.util.get_installed_models', return_value=[]), \
+                redirect_stderr(StringIO()):
+            provider = mock.Mock()
+            outcome = _run_answer(provider_class=provider)
+        self.assertEqual(outcome.status, 'fallback')
+        self.assertEqual(outcome.result['model']['fallback_reason'], 'policy_blocked')
+        self.assertFalse(outcome.external_services)
+        self.assertEqual(outcome.data_egress, 'none')
+        provider.assert_not_called()
+
+    def test_authored_ner_entities_are_scrubbed_by_real_sanitizer(self):
+        cleaned = managed._sanitize_text('白斑排查由测试小甲与 Fixture Person 共同核对。')
+        self.assertNotIn('测试小甲', cleaned)
+        self.assertNotIn('Fixture Person', cleaned)
+        self.assertIn('白斑', cleaned)
+
     def test_request_gate_stops_retrieval_and_cloud_before_session_creation(self):
         def forbidden_session(*_args, **_kwargs):
             raise AssertionError("gate must run before Catalog retrieval")

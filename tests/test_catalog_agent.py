@@ -10,7 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from catalog_agent import (
+from pcb_assistant.catalog.agent import (
     AGENT_FINGERPRINT_ALGORITHM,
     AGENT_SCHEMA,
     BOUNDARIES,
@@ -18,10 +18,10 @@ from catalog_agent import (
     export_agent,
     fingerprint_agent_result,
 )
-from catalog_build import build, source_snapshots
-from catalog_common import CatalogError, digest_file
-from catalog_evidence import evidence
-from knowledge_catalog import main as catalog_main
+from pcb_assistant.catalog.build import build, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, digest_file
+from pcb_assistant.catalog.evidence import evidence
+from pcb_assistant.catalog.cli import main as catalog_main
 from .test_catalog import fixture
 
 
@@ -168,7 +168,7 @@ class CatalogAgentTests(unittest.TestCase):
 
     def test_agent_calls_evidence_once_without_writing_catalog_or_sources(self):
         catalog_before = self.catalog_snapshot()
-        with patch("catalog_agent.evidence", wraps=evidence) as wrapped:
+        with patch('pcb_assistant.catalog.agent.evidence', wraps=evidence) as wrapped:
             result = ask_agent(self.output, "\u5206\u5c42", limit=2)
         self.assertEqual(wrapped.call_count, 1)
         self.assertEqual(wrapped.call_args.args[:2], (self.output, "\u5206\u5c42"))
@@ -179,7 +179,7 @@ class CatalogAgentTests(unittest.TestCase):
 
     def test_agent_passes_ranking_terms_and_exposes_ranking_basis(self):
         ranking_terms = (("分层", "分層", "delamination"),)
-        with patch("catalog_agent.evidence", wraps=evidence) as wrapped:
+        with patch('pcb_assistant.catalog.agent.evidence', wraps=evidence) as wrapped:
             result = ask_agent(
                 self.output, "分层", limit=1, ranking_terms=ranking_terms)
         self.assertEqual(wrapped.call_args.kwargs["ranking_terms"], ranking_terms)
@@ -204,7 +204,7 @@ class CatalogAgentTests(unittest.TestCase):
         })
 
     def test_agent_derives_ranking_groups_from_the_question(self):
-        with patch("catalog_agent.evidence", wraps=evidence) as wrapped:
+        with patch('pcb_assistant.catalog.agent.evidence', wraps=evidence) as wrapped:
             result = ask_agent(self.output, "分层 的不足会造成什么缺陷", limit=1)
         passed = wrapped.call_args.kwargs["ranking_terms"]
         self.assertIn(("分层", "分層", "层间分离", "層間分離", "delamination"), passed)

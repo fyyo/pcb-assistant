@@ -8,9 +8,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import phase6_managed
-import phase6_managed_trial as trial
-from tests.phase6_test_fixtures import SyntheticCatalogTestCase
+import pcb_assistant.interfaces.managed as phase6_managed
+import pcb_assistant.evaluation.managed_trial as trial
+from tests.phase6_test_fixtures import SyntheticManagedCatalogTestCase
 
 
 ENV = {
@@ -68,7 +68,7 @@ def _pass_row(latency_ms=250):
     }
 
 
-class Phase6ManagedTrialTests(SyntheticCatalogTestCase):
+class Phase6ManagedTrialTests(SyntheticManagedCatalogTestCase):
     def test_preflight_is_local_and_fail_closed(self):
         def forbidden_loader():
             raise AssertionError('privacy models must not load before opt-in')

@@ -1,8 +1,9 @@
 """Run the authorized public curriculum through training and isolated evaluation."""
+from pcb_assistant.paths import python_executable
 import argparse,subprocess,threading,time,os
-from continuous_common import ROOT,lock,read,verify_pointer,training_gpu,fingerprint
-from continuous_learning import update_state
-from learning_common import dump_json,digest_file,emit
+from pcb_assistant.training.storage import ROOT,lock,read,verify_pointer,training_gpu,fingerprint
+from pcb_assistant.training.worker import update_state
+from pcb_assistant.training.common import dump_json,digest_file,emit
 
 JOB=ROOT/'data/continuous/public_training_job.json'
 def execute(command):
@@ -20,7 +21,7 @@ def run():
   try:
    update_state(state='preparing_public_curriculum',active_task='public_curriculum')
    data,report=prepare();parent=report['parent_model'];parent_run=verify_pointer(parent)
-   ident=fingerprint({'data':digest_file(data/'report.json'),'parent':parent,'trainer':digest_file(ROOT/'train_engineer.py')})[:12]
+   ident=fingerprint({'data':digest_file(data/'report.json'),'parent':parent,'trainer':digest_file(ROOT / 'pcb_assistant/training/train.py')})[:12]
    output=ROOT/'data'/('model_training_public_'+ident)
    prior=read(JOB,{})
    if prior.get('run_name')==output.name and prior.get('state') in ('rejected','promoted','awaiting_generation_assessment'):
@@ -28,12 +29,12 @@ def run():
    job={'run_name':output.name,'data_run':data.name,'parent':parent,'state':'prepared','recipe':report['public_curriculum'],'started_at':time.time()}
    dump_json(JOB,job)
    if read(ROOT/'data/current_model.json')!=parent:raise ValueError('parent_changed')
-   py=str(ROOT/'.venv-train/bin/python')
+   py=python_executable('.venv-train', ROOT)
    with training_gpu():
     if not (output/'report.json').exists():
      job['state']='training';dump_json(JOB,job)
      update_state(state='training',active_task='public_curriculum',candidate_run=output.name)
-     command=[py,str(ROOT/'train_engineer.py'),'--data',str(data),'--run-name',output.name,'--initial-run',str(parent_run),
+     command=[py,'-m', 'pcb_assistant.training.train','--data',str(data),'--run-name',output.name,'--initial-run',str(parent_run),
               '--domain-steps','0','--instruction-epochs','2','--sequence-length','768','--accumulation','4','--validation-batches','64','--instruction-learning-rate','0.000005']
      if (output/'run_config.json').exists():command.append('--resume')
      execute(command)

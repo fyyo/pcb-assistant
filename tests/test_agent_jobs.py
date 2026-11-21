@@ -9,7 +9,7 @@ from unittest.mock import patch
 from agent import jobs
 from agent.cli import main
 from agent.evaluation import EVAL_SCHEMA
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 
 def write_suite(path: Path) -> None:
@@ -29,7 +29,7 @@ class AgentJobsTests(unittest.TestCase):
             job_id = started["job_id"]
             self.assertEqual(started["status"], "running")
             self.assertEqual(started["progress"], {"completed": 0, "total": 1, "case_id": None})
-            self.assertTrue(Path(started["report_path"]).is_relative_to(root))
+            self.assertTrue(Path(started["report_path"]).resolve().is_relative_to(root.resolve()))
             with patch("agent.jobs._alive", return_value=True):
                 self.assertEqual(jobs.get_job(job_id, root=root)["status"], "running")
 

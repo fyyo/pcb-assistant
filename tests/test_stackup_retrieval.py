@@ -3,12 +3,12 @@ from contextlib import redirect_stdout
 import hashlib,io,json,tempfile,unittest
 from pathlib import Path
 
-from catalog_build import build
-from catalog_chat import ChatSession,fingerprint_chat_result
-from catalog_common import digest_file
-from catalog_evidence import evidence,STACKUP_TABLE_POOL_LIMIT,_excerpts_for_text
-from pcb_knowledge import term_groups
-from pcb_selection import selection_conditions,condition_in_text
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.chat import ChatSession,fingerprint_chat_result
+from pcb_assistant.catalog.common import digest_file
+from pcb_assistant.catalog.evidence import evidence,STACKUP_TABLE_POOL_LIMIT,_excerpts_for_text
+from pcb_assistant.knowledge import term_groups
+from pcb_assistant.materials.selection import selection_conditions,condition_in_text
 from tests.test_catalog import fixture
 
 Q='如何选择2116半固化片PP树脂含量？查叠构表格的材料与介厚，左右版本可以混用吗？'

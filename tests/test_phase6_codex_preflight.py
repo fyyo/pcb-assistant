@@ -9,7 +9,7 @@ import tempfile
 import tomllib
 import unittest
 
-import phase6_codex_preflight as preflight
+import pcb_assistant.evaluation.codex_preflight as preflight
 
 
 def _envelope(tool_name):

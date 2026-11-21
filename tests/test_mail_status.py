@@ -5,7 +5,7 @@ from collections import Counter
 import json
 import unittest
 
-from mail_status import (
+from pcb_assistant.ingestion.mail_status import (
     MESSAGE_STATUS_ROW_FIELDS,
     STATUS_STAT_FIELDS,
     MessageStatusError,

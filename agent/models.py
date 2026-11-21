@@ -7,7 +7,7 @@ import hashlib
 import json
 from typing import Any
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 
 AGENT_SCHEMA = "lamination-agent-v1"

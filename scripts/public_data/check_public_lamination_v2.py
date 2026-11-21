@@ -1,8 +1,8 @@
 """Verify saved artifacts, full tokens, cross-version integrity and arithmetic."""
 from decimal import Decimal as D
 from transformers import AutoTokenizer
-from train_engineer import instruction_tokens
-from learning_common import dump_json,digest_file
+from pcb_assistant.training.train import instruction_tokens
+from pcb_assistant.training.common import dump_json,digest_file
 from scripts.public_data.build_public_lamination_v2 import ROOT,OUT,V1,rows,read,validate_records
 
 def main():

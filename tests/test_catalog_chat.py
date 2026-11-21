@@ -11,9 +11,9 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from catalog_build import build, source_snapshots
-from catalog_agent import ask_agent
-from catalog_chat import (
+from pcb_assistant.catalog.build import build, source_snapshots
+from pcb_assistant.catalog.agent import ask_agent
+from pcb_assistant.catalog.chat import (
     BOUNDARIES,
     CHAT_FINGERPRINT_ALGORITHM,
     CHAT_SCHEMA,
@@ -40,8 +40,8 @@ from catalog_chat import (
     verify_chat_session,
     verify_chat_session_file,
 )
-from catalog_common import CatalogError, digest_file
-from knowledge_catalog import main as catalog_main
+from pcb_assistant.catalog.common import CatalogError, digest_file
+from pcb_assistant.catalog.cli import main as catalog_main
 from .test_catalog import fixture
 
 
@@ -116,7 +116,7 @@ class CatalogChatTests(unittest.TestCase):
         original = ask_agent(self.output, "分层", limit=1)
         self.assertTrue(original["evidence_groups"])
         original["evidence_groups"][0]["evidence_status"] = "untrusted_attachment_ocr"
-        with patch("catalog_chat.ask_agent", return_value=original):
+        with patch('pcb_assistant.catalog.chat.ask_agent', return_value=original):
             result = ChatSession(self.output, generator=None).ask("分层")
         self.assertFalse(result["citations"][0]["ocr_values_independently_verified"])
         self.assertIn("尚未对照原图核实", result["answer"])
@@ -518,7 +518,7 @@ class CatalogChatTests(unittest.TestCase):
                 "ask", "分层", "--json"]
         unavailable = {"status": "unavailable", "mode": "evidence_fallback",
                        "reason": "ModuleNotFoundError"}
-        with patch("catalog_chat._load_model_generator",
+        with patch('pcb_assistant.catalog.chat._load_model_generator',
                    return_value=(None, unavailable)), redirect_stdout(output):
             self.assertEqual(main(argv), 0)
         result = json.loads(output.getvalue())
@@ -924,7 +924,7 @@ class CatalogChatTests(unittest.TestCase):
     def test_interactive_feedback_links_previous_turn_and_stays_private(self):
         before = self.catalog_snapshot()
         private = self.root / "interactive-feedback/.private"
-        feedback_root = private / "internal_pilot_feedback"
+        feedback_root = private / 'internal_pilot_feedback'
         session = ChatSession(
             self.output, generator=None, limit=1, feedback_root=feedback_root)
         output = io.StringIO()

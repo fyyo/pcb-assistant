@@ -15,7 +15,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from catalog_common import DEFAULT_CATALOG, digest_file
+from pcb_assistant.catalog.common import DEFAULT_CATALOG, digest_file
 
 SCHEMA = 'pcb-local-database-backup-v1'
 MANIFEST = 'backup_manifest.json'

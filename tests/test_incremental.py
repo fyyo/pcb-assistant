@@ -10,10 +10,10 @@ import sqlite3
 import tempfile
 import unittest
 
-from catalog_build import build, source_snapshots
-from catalog_common import CatalogError, digest_file, digest_text, stable_id, validate_version_metadata
-from catalog_incremental import ingest
-from knowledge_catalog import batches, growth, related, validate, version_diff, versions
+from pcb_assistant.catalog.build import build, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, digest_file, digest_text, stable_id, validate_version_metadata
+from pcb_assistant.catalog.incremental import ingest
+from pcb_assistant.catalog.cli import batches, growth, related, validate, version_diff, versions
 from .test_catalog import fixture, write_json, write_rows
 
 

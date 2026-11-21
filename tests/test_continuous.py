@@ -7,14 +7,14 @@ import time
 import unittest
 from unittest.mock import patch
 
-from continuous_common import (CAPABILITIES, fingerprint, lock, pointer_for, publish,
+from pcb_assistant.training.storage import (CAPABILITIES, fingerprint, lock, pointer_for, publish,
                                read, rollback, setup, submit_case, status)
-from continuous_data import FILES, initialize, rows, snapshot
-from continuous_ingest import ingest
-from continuous_learning import cycle
-from evaluate_continuous import behavior_check, decide
-from learning_common import ROOT, digest_file, dump_json
-from mail_privacy import Sanitizer, IdentityIndex
+from pcb_assistant.training.data import FILES, initialize, rows, snapshot
+from pcb_assistant.training.ingest import ingest
+from pcb_assistant.training.worker import cycle
+from pcb_assistant.training.evaluate import behavior_check, decide
+from pcb_assistant.training.common import ROOT, digest_file, dump_json
+from pcb_assistant.privacy.mail import Sanitizer, IdentityIndex
 
 
 def synthetic_case(number=0):
@@ -75,7 +75,7 @@ class ContinuousTests(unittest.TestCase):
         return record
 
     def test_no_data_no_training_and_worker_status_truthful(self):
-        with patch('continuous_learning.execute') as execute:
+        with patch('pcb_assistant.training.worker.execute') as execute:
             cycle(self.root, force=True)
             self.assertEqual(execute.call_count, 1)  # intake only, no trainer/evaluator
         self.assertEqual(status(self.root)['state'], 'waiting_for_new_data')
@@ -193,18 +193,18 @@ class ContinuousTests(unittest.TestCase):
         dump_json(self.root / 'data/continuous/split_assignments.json', {'new': 'train'})
         calls = []
         def execute(command, root):
-            calls.append(command[1])
-            if command[1].endswith('continuous_learning.py'):
+            calls.append(command[2])
+            if command[1:3] == ['-m', 'pcb_assistant.training.worker']:
                 model_fixture(root, command[command.index('--run-name') + 1])
-            elif command[1].endswith('evaluate_continuous.py'):
+            elif command[1:3] == ['-m', 'pcb_assistant.training.evaluate']:
                 output = Path(command[command.index('--output') + 1])
                 dump_json(output / 'promotion_evaluation.json', {'accepted': True, 'incumbent_run': self.pointer['run_name'], 'candidate_run': output.name})
-        with patch('continuous_learning.execute', side_effect=execute):
+        with patch('pcb_assistant.training.worker.execute', side_effect=execute):
             cycle(self.root, force=True)
             selected = read(self.root / 'data/current_model.json')
             self.assertNotEqual(selected, self.pointer)
             cycle(self.root, force=True)
-        self.assertEqual(sum(p.endswith('continuous_learning.py') for p in calls), 1)
+        self.assertEqual(calls.count('pcb_assistant.training.worker'), 1)
         self.assertEqual(status(self.root)['last_result'], 'promoted')
 
     def test_rejected_candidate_is_not_retried_without_new_data(self):
@@ -212,17 +212,17 @@ class ContinuousTests(unittest.TestCase):
         dump_json(self.root / 'data/continuous/split_assignments.json', {'new': 'train'})
         calls = []
         def execute(command, root):
-            calls.append(command[1])
-            if command[1].endswith('continuous_learning.py'):
+            calls.append(command[2])
+            if command[1:3] == ['-m', 'pcb_assistant.training.worker']:
                 model_fixture(root, command[command.index('--run-name') + 1])
-            elif command[1].endswith('evaluate_continuous.py'):
+            elif command[1:3] == ['-m', 'pcb_assistant.training.evaluate']:
                 output = Path(command[command.index('--output') + 1])
                 dump_json(output / 'promotion_evaluation.json', {'accepted': False, 'incumbent_run': self.pointer['run_name'], 'candidate_run': output.name})
-        with patch('continuous_learning.execute', side_effect=execute):
+        with patch('pcb_assistant.training.worker.execute', side_effect=execute):
             cycle(self.root, force=True)
             cycle(self.root, force=True)
         self.assertEqual(read(self.root / 'data/current_model.json'), self.pointer)
-        self.assertEqual(sum(p.endswith('continuous_learning.py') for p in calls), 1)
+        self.assertEqual(calls.count('pcb_assistant.training.worker'), 1)
         self.assertEqual(status(self.root)['last_result'], 'rejected')
 
     def test_crash_after_promotion_recovers_without_retraining(self):
@@ -233,7 +233,7 @@ class ContinuousTests(unittest.TestCase):
         model_fixture(self.root, name)
         candidate = pointer_for(self.root / 'data' / name, report['source_artifact_sha256'])
         publish(candidate, self.pointer, {'accepted': True}, self.root)
-        with patch('continuous_learning.execute') as execute:
+        with patch('pcb_assistant.training.worker.execute') as execute:
             cycle(self.root, force=True)
             self.assertEqual(execute.call_count, 1)
         self.assertEqual(status(self.root)['last_result'], 'promoted')

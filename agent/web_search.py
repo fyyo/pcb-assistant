@@ -7,7 +7,7 @@ import math
 from urllib.parse import urlencode, urlsplit, urlunsplit
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 from .providers import ExternalSearchAdapter
 

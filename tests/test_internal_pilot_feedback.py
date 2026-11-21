@@ -6,8 +6,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from catalog_common import CatalogError
-from internal_pilot_feedback import (
+from pcb_assistant.catalog.common import CatalogError
+from pcb_assistant.catalog.feedback import (
     DETAIL_SCHEMA,
     FEEDBACK_SCHEMA,
     LIST_SCHEMA,

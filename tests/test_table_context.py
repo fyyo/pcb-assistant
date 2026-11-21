@@ -7,13 +7,13 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from catalog_build import build
-from catalog_chat import ChatSession, fingerprint_chat_result
-from catalog_common import digest_file
-from catalog_evidence import _excerpts_for_text, evidence, fingerprint_result
-from pcb_knowledge import term_groups
-from pcb_selection import selection_conditions
-from pcb_table_context import (
+from pcb_assistant.catalog.build import build
+from pcb_assistant.catalog.chat import ChatSession, fingerprint_chat_result
+from pcb_assistant.catalog.common import digest_file
+from pcb_assistant.catalog.evidence import _excerpts_for_text, evidence, fingerprint_result
+from pcb_assistant.knowledge import term_groups
+from pcb_assistant.materials.selection import selection_conditions
+from pcb_assistant.tables.context import (
     explicit_rows, location_label, record_matches, returned_table_coverage,
     source_location, table_records, table_layout_pair,
 )

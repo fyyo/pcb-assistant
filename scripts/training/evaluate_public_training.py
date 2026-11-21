@@ -1,14 +1,14 @@
 """Full-context public holdout evaluation plus unchanged historical checks."""
 import argparse,gc
 from pathlib import Path
-from continuous_common import read,fingerprint
-from continuous_data import verify_data,rows
-from evaluate_continuous import evaluate,decide
-from learning_common import ROOT,SYSTEM_PROMPT,digest_file,dump_json,emit
+from pcb_assistant.training.storage import read,fingerprint
+from pcb_assistant.training.data import verify_data,rows
+from pcb_assistant.training.evaluate import evaluate,decide
+from pcb_assistant.training.common import ROOT,SYSTEM_PROMPT,digest_file,dump_json,emit
 
 def public_evaluate(run,data,output):
- from model_chat import LearnedEngineer
- from train_engineer import instruction_tokens
+ from pcb_assistant.training.inference import LearnedEngineer
+ from pcb_assistant.training.train import instruction_tokens
  report=verify_data(data)
  signature=fingerprint({'model':digest_file(run/'report.json'),'inference':digest_file(run/'inference_config.json'),
                         'data':digest_file(data/'report.json'),'evaluator':digest_file(__file__)})

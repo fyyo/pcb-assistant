@@ -14,7 +14,7 @@ import tempfile
 from typing import Any
 from urllib.parse import quote
 
-from catalog_common import CatalogError, DEFAULT_CATALOG
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG
 
 from .gate import MISSING_FACT_PROMPTS, STAGE_TERMS, extract_facts, gate_case
 from .models import MAX_QUESTION_CHARS, CaseInput, canonical_json

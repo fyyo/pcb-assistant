@@ -5,9 +5,9 @@ import json
 import unittest
 from unittest.mock import patch
 
-import catalog_chat
-import pcb_assistant as assistant
-import phase6_mcp as mcp
+import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.router as assistant
+import pcb_assistant.interfaces.mcp as mcp
 from agent.models import fingerprint_result
 from agent.retriever import CatalogRetriever
 from tests.test_agent_workflow import FakeRetriever, evidence_item

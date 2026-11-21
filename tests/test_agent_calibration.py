@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from catalog_common import CatalogError
+from pcb_assistant.catalog.common import CatalogError
 
 from agent.calibration import (
     collect_candidates,

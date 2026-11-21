@@ -7,7 +7,7 @@ import sqlite3
 import tempfile
 import unittest
 
-from catalog_common import digest_file
+from pcb_assistant.catalog.common import digest_file
 from scripts.catalog_backup import create_backup
 from scripts.check_database_delivery import DATABASES, check_delivery
 

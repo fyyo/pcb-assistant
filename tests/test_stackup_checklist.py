@@ -2,9 +2,9 @@
 import copy
 import unittest
 
-from catalog_evidence import _excerpts_for_text
-from pcb_selection import selection_conditions
-from pcb_stackup_checklist import stackup_block_checks, block_check_lines
+from pcb_assistant.catalog.evidence import _excerpts_for_text
+from pcb_assistant.materials.selection import selection_conditions
+from pcb_assistant.tables.checklist import stackup_block_checks, block_check_lines
 
 Q='如何选择2116半固化片PP？查叠构表格的材料、RC与介质厚度，铜厚2 oz。'
 HEADER='行2 | 列1=層別 | 列2=材料 | 列3=布型 | 列4=RC | 列5=介厚 | 列12=層別 | 列13=材料 | 列14=布型 | 列15=RC(%) | 列16=介质厚度(mm) | 列17=铜厚(oz)'

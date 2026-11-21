@@ -7,9 +7,9 @@ from pathlib import Path
 import unittest
 from unittest.mock import patch
 
-from catalog_build import source_snapshots
-from catalog_common import CatalogError, digest_file
-from catalog_evaluation import evaluate_quality_gate, evaluate_similar_cases
+from pcb_assistant.catalog.build import source_snapshots
+from pcb_assistant.catalog.common import CatalogError, digest_file
+from pcb_assistant.catalog.evaluation import evaluate_quality_gate, evaluate_similar_cases
 from .test_catalog_insights import insight_fixture
 
 
@@ -99,7 +99,7 @@ class CatalogEvaluationTests(unittest.TestCase):
             self.output, sample_size=2, limit=5, seed=17)
         regressed = copy.deepcopy(evaluation)
         regressed["invariants"]["failures"] = 1
-        with patch("catalog_evaluation.evaluate_similar_cases",
+        with patch('pcb_assistant.catalog.evaluation.evaluate_similar_cases',
                    return_value=regressed):
             report = evaluate_quality_gate(
                 self.output, sample_size=2, limit=5, seed=17)

@@ -7,9 +7,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from catalog_build import source_snapshots
-from catalog_common import CatalogError, digest_file
-from recommendation_review import (
+from pcb_assistant.catalog.build import source_snapshots
+from pcb_assistant.catalog.common import CatalogError, digest_file
+from pcb_assistant.catalog.review import (
     build_review_report, create_review_queue, review_evidence, review_next, submit_review,
 )
 from .test_catalog_insights import insight_fixture

@@ -1,6 +1,6 @@
 # Phase 6 契约与评测骨架
 
-此目录保存内部接口 schema、工具映射和合成评测骨架。当前公开 MCP 只暴露 `pcb_answer`，接入方式见[统一 MCP](../../docs/UNIFIED_PCB_ASSISTANT.md)。
+此目录保存内部接口 schema、工具映射和合成评测骨架。当前公开 MCP 只暴露 `pcb_answer`，接入方式见[MCP 指南](../../docs/UNIFIED_PCB_ASSISTANT.md)。
 
 ## 文件
 
@@ -16,10 +16,10 @@
 ## 验证
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 -B phase6_contract.py --validate
-.venv\Scripts\python.exe -X utf8 -B phase6_eval.py --validate
-.venv\Scripts\python.exe -X utf8 -B phase6_annotation.py --status
-.venv\Scripts\python.exe -X utf8 -B phase6_mapping.py
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.contract --validate
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.cases --validate
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.annotation --status
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.mapping
 .venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --self-test
 .venv\Scripts\python.exe -X utf8 -B -m unittest -v tests.test_phase6_contract
 ```
@@ -27,9 +27,9 @@
 重新生成：
 
 ```powershell
-.venv\Scripts\python.exe -X utf8 -B phase6_contract.py --write
-.venv\Scripts\python.exe -X utf8 -B phase6_mapping.py --write
-.venv\Scripts\python.exe -X utf8 -B phase6_annotation.py --template .tmp_work/phase6_annotations_draft.jsonl
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.contract --write
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.interfaces.mapping --write
+.venv\Scripts\python.exe -X utf8 -B -m pcb_assistant.evaluation.annotation --template .tmp_work/phase6_annotations_draft.jsonl
 ```
 
 ## 当前边界

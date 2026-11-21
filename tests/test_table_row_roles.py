@@ -1,8 +1,8 @@
 """Table requirements and remarks must not become material data records."""
-from catalog_chat import _table_context_lines
-from catalog_evidence import _excerpts_for_text
-from pcb_selection import selection_conditions
-from pcb_table_context import classified_rows, table_records, table_row_context, parallel_column_groups
+from pcb_assistant.catalog.chat import _table_context_lines
+from pcb_assistant.catalog.evidence import _excerpts_for_text
+from pcb_assistant.materials.selection import selection_conditions
+from pcb_assistant.tables.context import classified_rows, table_records, table_row_context, parallel_column_groups
 import unittest
 
 

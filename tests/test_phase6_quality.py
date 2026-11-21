@@ -6,8 +6,8 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from phase6_contract import load_cases
-import phase6_quality as quality
+from pcb_assistant.interfaces.contract import load_cases
+import pcb_assistant.evaluation.quality as quality
 
 
 class Phase6QualityTests(unittest.TestCase):

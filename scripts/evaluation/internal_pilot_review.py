@@ -14,9 +14,9 @@ import json
 from pathlib import Path
 import re
 
-from phase6_annotation import case_fingerprint
-from phase6_severe_review import load_records, prepare_packet, write_records
-import phase6_severe_review
+from pcb_assistant.evaluation.annotation import case_fingerprint
+from pcb_assistant.evaluation.review import load_records, prepare_packet, write_records
+import pcb_assistant.evaluation.review as phase6_severe_review
 
 
 ROOT = Path(__file__).resolve().parents[2]

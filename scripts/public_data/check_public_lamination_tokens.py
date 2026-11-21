@@ -1,7 +1,7 @@
 """CPU-only full-token and independent arithmetic checks for public exercises."""
 from decimal import Decimal as D
 from transformers import AutoTokenizer
-from train_engineer import instruction_tokens
+from pcb_assistant.training.train import instruction_tokens
 from scripts.public_data.build_public_lamination import OUT, ROOT, rows, write
 
 def main():

@@ -14,13 +14,13 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "knowledge_catalog",
+        "module": "pcb_assistant.catalog.cli",
         "symbol": "status"
       },
       "public_exposed": false,
       "secondary": [
         {
-          "module": "knowledge_catalog",
+          "module": "pcb_assistant.catalog.cli",
           "symbol": "statistics"
         }
       ],
@@ -37,7 +37,7 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "knowledge_catalog",
+        "module": "pcb_assistant.catalog.cli",
         "symbol": "search"
       },
       "public_exposed": false,
@@ -56,7 +56,7 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "catalog_evidence",
+        "module": "pcb_assistant.catalog.evidence",
         "symbol": "evidence"
       },
       "public_exposed": false,
@@ -76,13 +76,13 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "knowledge_catalog",
+        "module": "pcb_assistant.catalog.cli",
         "symbol": "document"
       },
       "public_exposed": false,
       "secondary": [
         {
-          "module": "knowledge_catalog",
+          "module": "pcb_assistant.catalog.cli",
           "symbol": "document_records"
         }
       ],
@@ -99,7 +99,7 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "knowledge_catalog",
+        "module": "pcb_assistant.catalog.cli",
         "symbol": "related"
       },
       "public_exposed": false,
@@ -117,7 +117,7 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "catalog_insights",
+        "module": "pcb_assistant.catalog.insights",
         "symbol": "similar_cases"
       },
       "public_exposed": false,
@@ -136,7 +136,7 @@
       "phase6_1_exposed": true,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "catalog_chat",
+        "module": "pcb_assistant.catalog.chat",
         "symbol": "_citation_validation"
       },
       "public_exposed": false,
@@ -156,7 +156,7 @@
       "phase6_1_exposed": false,
       "phase6_2_exposed": true,
       "primary": {
-        "module": "pcb_assistant",
+        "module": "pcb_assistant.router",
         "symbol": "answer"
       },
       "public_exposed": true,
@@ -166,15 +166,15 @@
           "symbol": "diagnose"
         },
         {
-          "module": "phase6_managed",
+          "module": "pcb_assistant.interfaces.managed",
           "symbol": "answer"
         },
         {
-          "module": "catalog_chat",
+          "module": "pcb_assistant.catalog.chat",
           "symbol": "ChatSession.ask"
         },
         {
-          "module": "catalog_agent",
+          "module": "pcb_assistant.catalog.agent",
           "symbol": "ask_agent"
         }
       ],

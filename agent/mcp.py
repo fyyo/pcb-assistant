@@ -3,7 +3,7 @@
 Both historical launch commands expose only pcb_answer; diagnosis logic stays
 in agent.workflow, without a second protocol implementation.
 """
-from phase6_mcp import dispatch, list_tools, main, serve
+from pcb_assistant.interfaces.mcp import dispatch, list_tools, main, serve
 
 __all__ = ["dispatch", "list_tools", "main", "serve"]
 

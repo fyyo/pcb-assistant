@@ -6,9 +6,9 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from catalog_build import ATTACHMENT_FILES, build, normalize_attachment_sources, source_snapshots
-from catalog_common import CatalogError, connect_readonly, digest_file, stable_id
-from knowledge_catalog import related, search, validate
+from pcb_assistant.catalog.build import ATTACHMENT_FILES, build, normalize_attachment_sources, source_snapshots
+from pcb_assistant.catalog.common import CatalogError, connect_readonly, digest_file, stable_id
+from pcb_assistant.catalog.cli import related, search, validate
 from tests.test_catalog import fixture, write_json, write_rows
 
 

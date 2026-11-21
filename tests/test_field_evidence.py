@@ -2,14 +2,14 @@
 import json
 import unittest
 
-from catalog_chat import ChatSession,fingerprint_chat_result
-from pcb_field_evidence import field_evidence_requests,evidence_request_lines
-from pcb_table_fields import table_field_checks
-from pcb_stackup_checklist import stackup_block_checks
-from pcb_table_followup import resolve_table_scope
+from pcb_assistant.catalog.chat import ChatSession,fingerprint_chat_result
+from pcb_assistant.tables.evidence import field_evidence_requests,evidence_request_lines
+from pcb_assistant.tables.fields import table_field_checks
+from pcb_assistant.tables.checklist import stackup_block_checks
+from pcb_assistant.tables.followup import resolve_table_scope
 from tests import test_stackup_checklist as cells
 from tests import test_stackup_retrieval as fixtures
-import phase6_mcp as mcp
+import pcb_assistant.interfaces.mcp as mcp
 
 
 def requests(text=cells.TEXT,q=cells.Q,fields=('rc','thickness')):

@@ -7,9 +7,9 @@ import json
 from pathlib import Path
 import sqlite3
 
-from catalog_common import digest_file
-from mail_privacy import PLACEHOLDER
-from pcb_knowledge import tokens
+from pcb_assistant.catalog.common import digest_file
+from pcb_assistant.privacy.mail import PLACEHOLDER
+from pcb_assistant.knowledge import tokens
 from scripts.data.rewash_candidate_identities import NUMBERS, RELEASE, read_rows, snapshot, write_json
 
 

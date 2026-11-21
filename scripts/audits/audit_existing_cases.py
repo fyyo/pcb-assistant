@@ -8,10 +8,10 @@ import json
 import os
 import re
 
-from continuous_common import ROOT, read
-from continuous_data import initialize
-from learning_common import digest_file, dump_json, emit
-from pcb_knowledge import extract_fields
+from pcb_assistant.training.storage import ROOT, read
+from pcb_assistant.training.data import initialize
+from pcb_assistant.training.common import digest_file, dump_json, emit
+from pcb_assistant.knowledge import extract_fields
 
 OUTCOME = re.compile(
     r'(?:测试|測試|试验|試驗|验证|驗證|切片|复测|復測|检查|檢查).{0,24}'

@@ -1,4 +1,4 @@
-# 统一压合助手 MCP
+# MCP 接入与 Catalog 选择
 
 更新时间：2026-11-16。当前 MCP 只对外暴露 `pcb_answer`。知识咨询、缺陷诊断和必要追问由服务内部自动分流，客户端不选择检索或诊断工具。
 
@@ -13,7 +13,13 @@
 传输：stdio
 ```
 
-所选目录同时用于问答、诊断、状态、文档、关联附件和信封版本；提问参数不能覆盖选库。切换目录后重新启动服务。默认路径为本机交付时的 v9，源码不包含该数据库；详见[数据库维护](DATABASE_OPERATIONS.md)和[指定 Catalog](MCP_CATALOG_SELECTION.md)。
+所选目录同时用于问答、诊断、状态、文档、关联附件和信封版本；提问参数不能覆盖选库。路径不存在、schema 错误或版本登记无效时启动失败，不创建空库或回退到其他库。切换目录后重启服务。源码不包含数据库；本机默认路径来自 `pcb_assistant.catalog.common`，其他机器应显式选择自有库。备份与恢复见[数据库维护](DATABASE_OPERATIONS.md)。
+
+```powershell
+python -X utf8 -B phase6_mcp.py --catalog data/my_catalog
+python -X utf8 -B phase6_mcp.py --catalog data/my_catalog --self-test
+python -X utf8 -B -m pcb_assistant.evaluation.stdio_trial --catalog data/my_catalog --json
+```
 
 已有 DSH 配置无需另加诊断服务。重启 DSH 或重载服务后，在新会话中确认工具列表只有 `pcb_answer`。旧会话可能缓存旧工具列表；旧的 `pcb_search`、`pcb_evidence` 等工具名现在会被 MCP 拒绝。
 
@@ -63,10 +69,10 @@
 
 ## 结构与维护
 
-- `phase6_mcp.py`：唯一协议实现，负责参数检查、输出脱敏、文本预算和信封。
-- `pcb_assistant.py`：内部自动分流和病例上下文合并。
+- `phase6_mcp.py`：兼容启动入口，唯一协议实现在 `pcb_assistant/interfaces/mcp.py`，负责参数检查、输出脱敏、文本预算和信封。
+- `pcb_assistant/router.py`：内部自动分流和病例上下文合并。
 - `agent.workflow.diagnose()`：诊断业务逻辑，继续供 CLI 和无标签评测复用。
-- `phase6_managed.answer()`：知识问答及已有的可选托管综合。
+- `pcb_assistant.interfaces.managed.answer()`：知识问答及已有的可选托管综合。
 - 原有 7 个底层操作保留为本地维护能力及内部函数，不再对外提供 MCP 工具。
 
 外层沿用 `pcb-agent-v1` 信封。知识与诊断回答保持统一的 `answer`、`citations`、`missing_information`、`clarifying_questions`、引用校验和结果指纹；诊断细节保存在 `result.diagnosis`，内部路由记录在 `result.workflow`。诊断的 `insufficient_evidence` 映射为外层 `no_evidence`，细分状态仍保存在诊断结果中。

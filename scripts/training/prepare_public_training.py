@@ -1,8 +1,8 @@
 """Assemble an immutable instruction-only curriculum with separated holdouts."""
 import json,random,shutil
-from continuous_common import ROOT,read,fingerprint,verify_pointer
-from continuous_data import verify_data
-from learning_common import digest_file,dump_json,emit
+from pcb_assistant.training.storage import ROOT,read,fingerprint,verify_pointer
+from pcb_assistant.training.data import verify_data
+from pcb_assistant.training.common import digest_file,dump_json,emit
 
 def rows(path):
  return [json.loads(l) for l in path.open() if l.strip()]
@@ -24,7 +24,7 @@ def validate_isolation(train,evaluation,manifests):
 
 def prepare():
  from transformers import AutoTokenizer
- from train_engineer import instruction_tokens
+ from pcb_assistant.training.train import instruction_tokens
  foundation=read(ROOT/'data/continuous/foundation.json')
  seed=ROOT/'data'/foundation['prepared'];verify_data(seed)
  assert digest_file(seed/'report.json')==foundation['prepared_report_sha256']

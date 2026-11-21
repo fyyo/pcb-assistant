@@ -9,7 +9,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-import phase6_release as release
+import pcb_assistant.evaluation.release as release
 
 
 def _passed_eval_report():

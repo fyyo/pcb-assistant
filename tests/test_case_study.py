@@ -3,12 +3,12 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from continuous_data import rows
-from continuous_common import read
-from prepare_case_study import fragments, prepare
+from pcb_assistant.training.data import rows
+from pcb_assistant.training.storage import read
+from pcb_assistant.training.lessons import fragments, prepare
 from .test_continuous import foundation_fixture
 from .test_learning import FakeTokenizer
-from train_engineer import instruction_tokens
+from pcb_assistant.training.train import instruction_tokens
 
 
 class CaseStudyTests(unittest.TestCase):

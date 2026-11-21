@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import sys
 
-from catalog_common import CatalogError, DEFAULT_CATALOG
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG
 
 from .calibration import (
     DEFAULT_EXPORT_PATH,

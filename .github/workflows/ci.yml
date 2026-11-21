@@ -21,7 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['3.11', '3.13']
+        # The bundled rapidocr-onnxruntime 1.4 backend requires Python < 3.13.
+        python: ['3.11', '3.12']
     env:
       PYTHONUTF8: '1'
       PYTHONDONTWRITEBYTECODE: '1'
@@ -42,10 +43,10 @@ jobs:
       - name: Check dependency consistency
         run: python -m pip check
       - name: Validate contracts
-        run: python -X utf8 -B phase6_contract.py --validate
+        run: python -X utf8 -B -m pcb_assistant.interfaces.contract --validate
       - name: Validate evaluation cases
-        run: python -X utf8 -B phase6_eval.py --validate
+        run: python -X utf8 -B -m pcb_assistant.evaluation.cases --validate
       - name: Validate tool mapping
-        run: python -X utf8 -B phase6_mapping.py
+        run: python -X utf8 -B -m pcb_assistant.interfaces.mapping
       - name: Run synthetic regression suite
         run: python -X utf8 -B -m unittest discover -v

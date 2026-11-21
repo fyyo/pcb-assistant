@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 from agent import mcp
-import phase6_mcp as unified
+import pcb_assistant.interfaces.mcp as unified
 
 
 class LaminationMcpTests(unittest.TestCase):
@@ -28,7 +28,7 @@ class LaminationMcpTests(unittest.TestCase):
         self.assertEqual(envelope["data_egress"], "none")
 
     def test_invalid_arguments_stop_before_the_assistant(self):
-        with patch("pcb_assistant.answer") as assistant:
+        with patch('pcb_assistant.router.answer') as assistant:
             response = mcp.dispatch({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
                 "params": {"name": "pcb_answer", "arguments": {"question": "", "path": "secret"}}})
         self.assertTrue(response["result"]["isError"])
