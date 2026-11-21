@@ -1,0 +1,6 @@
+# Synthetic regression suite; no PST parser, spaCy language models or training stack.
+-r requirements-core.txt
+-r requirements-attachments.txt
+spacy>=3.8,<3.9
+Pillow>=10,<13
+beautifulsoup4>=4.12,<5

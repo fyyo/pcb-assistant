@@ -1,0 +1,10 @@
+{
+  "case_id": "delamination_001",
+  "question": "压合后板边出现分层，六层板，PP 批次不确定，真空压机生产。",
+  "defect": "delamination",
+  "stage": "lamination",
+  "location": "board_edge",
+  "material": "FR-4",
+  "stackup": "6层",
+  "equipment": "真空压机"
+}

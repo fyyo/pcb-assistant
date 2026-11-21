@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "enabled": true,
+  "poll_seconds": 60,
+  "minimum_new_training_records": 8,
+  "maximum_batch_wait_hours": 24,
+  "failure_retry_hours": 6,
+  "new_case_holdout_fraction": 0.2,
+  "maximum_loss_regression": 0.02,
+  "minimum_relative_improvement": 0.005,
+  "minimum_behavior_pass_fraction": 0.8,
+  "manual_review_required": false,
+  "self_generated_answers_are_training_targets": false,
+  "local_only": true,
+  "training_coverage": "all_eligible_historical_and_new_training_rows_full_epoch",
+  "paused_by_user": false,
+  "paused_at": "2026-10-07T23:15:17+08:00",
+  "resumed_at": "2026-10-08T12:56:22.534178+08:00"
+}

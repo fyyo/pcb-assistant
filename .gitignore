@@ -1,0 +1,57 @@
+# Mail archives and all mail-derived/private data must never enter version control.
+*.pst
+*.ost
+*.eml
+*.msg
+*.mbox
+.venv/
+.venv-train/
+.venv-ocr/
+models/
+__pycache__/
+*.pyc
+.private/
+.tmp_work/
+openviking-shadow/
+/data/
+output/
+dist/
+android/.build/
+*.log
+
+# Machine configuration and credentials
+/.aws/
+/.codex/
+/.agents/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Local databases, backups, generated reports and editor caches
+*.sqlite
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+*.zip
+*.7z
+/docs/*_20[0-9][0-9][0-1][0-9][0-3][0-9].*
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.idea/
+.vscode/
+*.egg-info/
+build/
+
+# Local scratch artifacts
+.tmp_patch.txt
+/$null
+/PUBLIC_KNOWLEDGE.md
+/PUBLIC_KNOWLEDGE_V2.md

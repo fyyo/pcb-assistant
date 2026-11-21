@@ -1,0 +1,10 @@
+{"case_id":"white_spot_001","question":"压合后板边出现白斑，PP 是 FR-4，六层板，使用真空压机，应该怎么排查？","defect":"white_spot","stage":"lamination","location":"board_edge","material":"FR-4","stackup":"6层","equipment":"真空压机","expected":{"gate_status":"accepted","defect":"white_spot"}}
+{"case_id":"delamination_001","question":"压合后板边出现分层，六层板，PP 批次不确定，真空压机生产。","defect":"delamination","stage":"lamination","location":"board_edge","material":"FR-4","stackup":"6层","equipment":"真空压机","expected":{"gate_status":"accepted","defect":"delamination"}}
+{"case_id":"blister_001","question":"压合后板中起泡，过回流焊后更明显，怀疑 PP 受潮。","defect":"blister","stage":"lamination","location":"board_center","material":"FR-4","stackup":"8层","expected":{"gate_status":"accepted","defect":"blister"}}
+{"case_id":"void_001","question":"压合后 BGA 区出现空洞，真空度记录不完整。","defect":"void","stage":"lamination","location":"bga_area","material":"FR-4","stackup":"10层","expected":{"gate_status":"accepted","defect":"void"}}
+{"case_id":"resin_shortage_001","question":"高铜密度区域压合后缺胶，叠构是 8 层，铜厚 2oz。","defect":"resin_shortage","stage":"lamination","location":"large_area","material":"FR-4","stackup":"8层","expected":{"gate_status":"accepted","defect":"resin_shortage"}}
+{"case_id":"warpage_001","question":"压合后板子翘曲，冷却后发现，叠构可能不对称。","defect":"warpage","stage":"lamination","location":"large_area","material":"FR-4","stackup":"6层","expected":{"gate_status":"accepted","defect":"warpage"}}
+{"case_id":"alias_white_dot","question":"压板后板边有白点，六层板，FR-4，真空压机。","expected":{"gate_status":"accepted","defect":"white_spot"}}
+{"case_id":"missing_basic_facts","question":"压合后板边出现白斑。","expected":{"gate_status":"accepted","defect":"white_spot","required_missing_facts":["material","stackup","parameters"]}}
+{"case_id":"clarify_without_defect","question":"压合后出现异常，应该怎么排查？","expected":{"gate_status":"needs_clarification","defect":null}}
+{"case_id":"out_of_domain","question":"明天上海天气怎么样？","expected":{"gate_status":"refused","defect":null}}

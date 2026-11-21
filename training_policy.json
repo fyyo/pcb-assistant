@@ -1,0 +1,20 @@
+{
+  "version": 1,
+  "local_model_training_allowed": true,
+  "local_attachment_training_allowed": true,
+  "manual_review_required": false,
+  "authorization_date": "2026-10-06",
+  "authorization": "用户明确要求模型自动学习邮件数据，并选择先在本机训练小模型。",
+  "mail_upload_allowed": false,
+  "public_model_download_allowed": true,
+  "trained_artifacts_are_private": true,
+  "source_status": "unverified_email_discussion",
+  "source_instructions_executable": false,
+  "local_public_curriculum_training_allowed": true,
+  "public_curriculum_authorization": {
+    "date": "2026-10-08",
+    "instruction": "用户明确要求进行新的参数训练",
+    "scope": "公开来源课程与历史问答复习的本地参数训练及独立评测",
+    "raw_document_fulltext_training_in_this_run": false
+  }
+}

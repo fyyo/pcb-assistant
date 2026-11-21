@@ -1,0 +1,7 @@
+# Install torch==2.5.1 separately from the CUDA 11.8 wheel index for this GPU driver.
+transformers==4.46.3
+peft==0.13.2
+accelerate==1.1.1
+safetensors>=0.4.3,<0.6
+huggingface-hub>=0.26,<0.27
+numpy>=1.26,<2

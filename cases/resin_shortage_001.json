@@ -1,0 +1,12 @@
+{
+  "case_id": "resin_shortage_001",
+  "question": "高铜密度区域压合后缺胶，叠构是 8 层，铜厚 2oz。",
+  "defect": "resin_shortage",
+  "stage": "lamination",
+  "location": "large_area",
+  "material": "FR-4",
+  "stackup": "8层",
+  "parameters": {
+    "copper_thickness": "2oz"
+  }
+}

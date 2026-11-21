@@ -1,0 +1,9 @@
+{
+  "case_id": "blister_001",
+  "question": "压合后板中起泡，过回流焊后更明显，怀疑 PP 受潮。",
+  "defect": "blister",
+  "stage": "lamination",
+  "location": "board_center",
+  "material": "FR-4",
+  "stackup": "8层"
+}

@@ -1,0 +1,2 @@
+# Retrieval and evidence answers against an existing Catalog.
+jieba==0.42.1

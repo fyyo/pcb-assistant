@@ -1,0 +1,46 @@
+{
+  "schema": "pcb-internal-pilot-cases-v1",
+  "description": "Authored synthetic questions for optional workflow checks; no production records.",
+  "cases": [
+    {
+      "case_id": "PILOT_SYNTHETIC_01",
+      "category": "white_spot",
+      "language": "zh",
+      "question": "合成练习：六层板压合后有白斑，先收集哪些工艺和检验记录？",
+      "provenance": {"source": "synthetic_software_fixture"},
+      "sensitivity": "public"
+    },
+    {
+      "case_id": "PILOT_SYNTHETIC_02",
+      "category": "delamination",
+      "language": "zh",
+      "question": "合成练习：多层板发现分层，应如何组织材料、压合和切片证据？",
+      "provenance": {"source": "synthetic_software_fixture"},
+      "sensitivity": "public"
+    },
+    {
+      "case_id": "PILOT_SYNTHETIC_03",
+      "category": "edge_blister",
+      "language": "zh",
+      "question": "合成练习：压合板边起泡，哪些缺失信息需要先向现场确认？",
+      "provenance": {"source": "synthetic_software_fixture"},
+      "sensitivity": "public"
+    },
+    {
+      "case_id": "PILOT_SYNTHETIC_04",
+      "category": "vacuum",
+      "language": "zh",
+      "question": "合成练习：真空记录波动，需要核对哪些设备和时间段证据？",
+      "provenance": {"source": "synthetic_software_fixture"},
+      "sensitivity": "public"
+    },
+    {
+      "case_id": "PILOT_SYNTHETIC_05",
+      "category": "cure_anomaly",
+      "language": "zh",
+      "question": "合成练习：怀疑压合固化不足，材料、板内温度与保温时间分别需要什么依据？",
+      "provenance": {"source": "synthetic_software_fixture"},
+      "sensitivity": "public"
+    }
+  ]
+}

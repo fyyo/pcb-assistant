@@ -1,0 +1,137 @@
+{
+  "contract_schema": "pcb-agent-errors-v1",
+  "contract_version": "pcb-agent-v1",
+  "errors": [
+    {
+      "code": "invalid_request",
+      "description": "请求结构、类型或范围不合法。",
+      "fallback": false,
+      "http_status": 400,
+      "retryable": false
+    },
+    {
+      "code": "invalid_argument",
+      "description": "单个参数不满足契约。",
+      "fallback": false,
+      "http_status": 400,
+      "retryable": false
+    },
+    {
+      "code": "not_found",
+      "description": "文档或资源不存在。",
+      "fallback": false,
+      "http_status": 404,
+      "retryable": false
+    },
+    {
+      "code": "catalog_unavailable",
+      "description": "Catalog 无法读取或状态异常。",
+      "fallback": false,
+      "http_status": 503,
+      "retryable": true
+    },
+    {
+      "code": "no_evidence",
+      "description": "没有足够证据，返回补料问题。",
+      "fallback": false,
+      "http_status": 200,
+      "retryable": false
+    },
+    {
+      "code": "needs_clarification",
+      "description": "问题缺少必要条件。",
+      "fallback": false,
+      "http_status": 200,
+      "retryable": false
+    },
+    {
+      "code": "policy_blocked",
+      "description": "请求被只读、隐私或范围策略拒绝。",
+      "fallback": true,
+      "http_status": 403,
+      "retryable": false
+    },
+    {
+      "code": "cloud_disabled",
+      "description": "服务端未允许云端出境。",
+      "fallback": true,
+      "http_status": 200,
+      "retryable": false
+    },
+    {
+      "code": "cloud_not_configured",
+      "description": "Provider、模型或凭据未配置。",
+      "fallback": true,
+      "http_status": 200,
+      "retryable": false
+    },
+    {
+      "code": "provider_auth_failed",
+      "description": "云端认证失败。",
+      "fallback": true,
+      "http_status": 502,
+      "retryable": false
+    },
+    {
+      "code": "provider_timeout",
+      "description": "云端请求超时。",
+      "fallback": true,
+      "http_status": 504,
+      "retryable": true
+    },
+    {
+      "code": "provider_rate_limited",
+      "description": "云端限流。",
+      "fallback": true,
+      "http_status": 429,
+      "retryable": true
+    },
+    {
+      "code": "provider_unavailable",
+      "description": "云端不可用。",
+      "fallback": true,
+      "http_status": 503,
+      "retryable": true
+    },
+    {
+      "code": "invalid_schema",
+      "description": "云端输出不符合 JSON Schema。",
+      "fallback": true,
+      "http_status": 502,
+      "retryable": false
+    },
+    {
+      "code": "invalid_citation",
+      "description": "答案包含无效或缺失的 EXC 引用。",
+      "fallback": true,
+      "http_status": 422,
+      "retryable": false
+    },
+    {
+      "code": "empty_answer",
+      "description": "云端返回空答案。",
+      "fallback": true,
+      "http_status": 502,
+      "retryable": false
+    },
+    {
+      "code": "internal_error",
+      "description": "未分类内部错误。",
+      "fallback": false,
+      "http_status": 500,
+      "retryable": false
+    }
+  ],
+  "fallback_reasons": [
+    "cloud_disabled",
+    "cloud_not_configured",
+    "provider_auth_failed",
+    "provider_timeout",
+    "provider_rate_limited",
+    "provider_unavailable",
+    "invalid_schema",
+    "invalid_citation",
+    "empty_answer",
+    "policy_blocked"
+  ]
+}

@@ -1,0 +1,140 @@
+{
+  "$id": "pcb-answer-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "assessment": {
+      "enum": [
+        "confirmed",
+        "likely",
+        "hypothesis",
+        "insufficient"
+      ]
+    },
+    "checks": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "citation_ids": {
+            "items": {
+              "maxLength": 32,
+              "minLength": 0,
+              "pattern": "^EXC_[0-9a-f]{24}$",
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "purpose": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "step": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "step",
+          "purpose",
+          "citation_ids"
+        ],
+        "type": "object"
+      },
+      "maxItems": 8,
+      "minItems": 0,
+      "type": "array"
+    },
+    "limitations": {
+      "items": {
+        "maxLength": 500,
+        "minLength": 0,
+        "type": "string"
+      },
+      "maxItems": 10,
+      "minItems": 0,
+      "type": "array"
+    },
+    "missing_information": {
+      "items": {
+        "maxLength": 500,
+        "minLength": 0,
+        "type": "string"
+      },
+      "maxItems": 20,
+      "minItems": 0,
+      "type": "array"
+    },
+    "possible_causes": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "cause": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "citation_ids": {
+            "items": {
+              "maxLength": 32,
+              "minLength": 0,
+              "pattern": "^EXC_[0-9a-f]{24}$",
+              "type": "string"
+            },
+            "maxItems": 8,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "cause",
+          "citation_ids"
+        ],
+        "type": "object"
+      },
+      "maxItems": 6,
+      "minItems": 0,
+      "type": "array"
+    },
+    "status": {
+      "enum": [
+        "answered",
+        "insufficient_evidence"
+      ]
+    },
+    "summary": {
+      "maxLength": 1200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "summary_citation_ids": {
+      "items": {
+        "maxLength": 32,
+        "minLength": 0,
+        "pattern": "^EXC_[0-9a-f]{24}$",
+        "type": "string"
+      },
+      "maxItems": 8,
+      "minItems": 1,
+      "type": "array",
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "status",
+    "assessment",
+    "summary",
+    "summary_citation_ids",
+    "possible_causes",
+    "checks",
+    "missing_information",
+    "limitations"
+  ],
+  "title": "PCB Structured Answer v1",
+  "type": "object"
+}

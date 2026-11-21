@@ -1,0 +1,473 @@
+{
+  "contract_schema": "pcb-agent-tools-v1",
+  "contract_version": "pcb-agent-v1",
+  "default_answer_mode": "evidence_only",
+  "dispatch": "server_side_automatic",
+  "output_envelope_schema": "pcb-agent-v1.envelope.schema.json",
+  "primary_transport": "stdio",
+  "public_tools": [
+    "pcb_answer"
+  ],
+  "read_only": true,
+  "remote_transport": "disabled_until_auth",
+  "tools": [
+    {
+      "data_egress": "none",
+      "description": "读取 Catalog 版本、状态、统计和健康信息。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {},
+        "required": [],
+        "type": "object"
+      },
+      "name": "pcb_stats",
+      "result_kind": "catalog_stats",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "按关键词和过滤条件检索文档，不返回未授权正文。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content_status": {
+            "enum": [
+              "ready",
+              "metadata_only"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "doc_type": {
+            "enum": [
+              "MAIL",
+              "CASE",
+              "ATTACHMENT",
+              "KNOWLEDGE",
+              "PUBLIC"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "mail",
+              "case",
+              "attachment",
+              "public_reference"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "version": {
+            "maxLength": 150,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [],
+        "type": "object"
+      },
+      "name": "pcb_search",
+      "result_kind": "document_search",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "返回有界正文摘录、关联附件正文、EXC 引用、相关性和字段覆盖。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content_status": {
+            "enum": [
+              "ready",
+              "metadata_only"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "doc_type": {
+            "enum": [
+              "MAIL",
+              "CASE",
+              "ATTACHMENT",
+              "KNOWLEDGE",
+              "PUBLIC"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "query": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "mail",
+              "case",
+              "attachment",
+              "public_reference"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "version": {
+            "maxLength": 150,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "type": "object"
+      },
+      "name": "pcb_evidence",
+      "result_kind": "evidence_pack",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "读取单个文档元数据；include_text=true 返回正文；include_attachments=true 同时返回关联附件的可读正文。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "attachment_limit": {
+            "maximum": 20,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "attachment_max_chars": {
+            "maximum": 12000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "doc_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^(?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32}$",
+            "type": "string"
+          },
+          "include_attachments": {
+            "type": "boolean"
+          },
+          "include_text": {
+            "type": "boolean"
+          },
+          "max_chars": {
+            "maximum": 12000,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id"
+        ],
+        "type": "object"
+      },
+      "name": "pcb_get_document",
+      "result_kind": "document_detail",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "读取文档关系、方向和未解决引用。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "direction": {
+            "enum": [
+              "in",
+              "out",
+              "both"
+            ],
+            "maxLength": 10,
+            "minLength": 0,
+            "type": "string"
+          },
+          "doc_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^(?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32}$",
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 100,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id"
+        ],
+        "type": "object"
+      },
+      "name": "pcb_related",
+      "result_kind": "related_documents",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "按文档 ID 查询相似案例。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "doc_id": {
+            "maxLength": 64,
+            "minLength": 1,
+            "pattern": "^(?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32}$",
+            "type": "string"
+          },
+          "limit": {
+            "maximum": 50,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "offset": {
+            "maximum": 500,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "doc_id"
+        ],
+        "type": "object"
+      },
+      "name": "pcb_similar_cases",
+      "result_kind": "similar_cases",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "description": "校验答案中的引用是否来自指定证据包。",
+      "external_services": false,
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "answer": {
+            "maxLength": 12000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "available_excerpt_ids": {
+            "items": {
+              "maxLength": 32,
+              "minLength": 0,
+              "pattern": "^EXC_[0-9a-f]{24}$",
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "answer",
+          "available_excerpt_ids"
+        ],
+        "type": "object"
+      },
+      "name": "pcb_validate_citations",
+      "result_kind": "citation_validation",
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "conditional",
+      "default_mode": "evidence_only",
+      "description": "PCB 压合助手的唯一入口。直接提交问题，内部自动完成知识检索、缺陷诊断或必要追问；后续补充信息放在 question，并在 history 携带最近对话，无需选择流程。返回回答、证据引用和待补充信息。",
+      "external_services": "conditional",
+      "input_schema": {
+        "additionalProperties": false,
+        "properties": {
+          "content_status": {
+            "enum": [
+              "ready",
+              "metadata_only"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "doc_type": {
+            "enum": [
+              "MAIL",
+              "CASE",
+              "ATTACHMENT",
+              "KNOWLEDGE",
+              "PUBLIC"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "history": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "content": {
+                  "maxLength": 2800,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "role": {
+                  "enum": [
+                    "user",
+                    "assistant"
+                  ],
+                  "maxLength": 20,
+                  "minLength": 0,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "role",
+                "content"
+              ],
+              "type": "object"
+            },
+            "maxItems": 8,
+            "minItems": 0,
+            "type": "array"
+          },
+          "limit": {
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "max_sources": {
+            "maximum": 10,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "evidence_only",
+              "managed"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "type": "string"
+          },
+          "question": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "source": {
+            "enum": [
+              "mail",
+              "case",
+              "attachment",
+              "public_reference"
+            ],
+            "maxLength": 30,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tags": {
+            "items": {
+              "maxLength": 200,
+              "minLength": 1,
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          },
+          "version": {
+            "maxLength": 150,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "question"
+        ],
+        "type": "object"
+      },
+      "modes": [
+        "evidence_only",
+        "managed"
+      ],
+      "name": "pcb_answer",
+      "result_kind": "answer",
+      "side_effects": false,
+      "status": "P2"
+    }
+  ]
+}

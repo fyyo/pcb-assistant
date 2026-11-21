@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "local_attachment_processing_allowed": true,
+  "local_attachment_training_allowed": true,
+  "manual_review_required": false,
+  "external_services": false,
+  "execute_macros_or_formulas": false,
+  "max_attachment_bytes": 67108864,
+  "max_archive_expanded_bytes": 134217728,
+  "max_archive_members": 1000,
+  "max_document_pages": 1000,
+  "max_document_characters": 2000000,
+  "max_table_rows": 100000,
+  "max_table_columns": 256,
+  "ocr_min_confidence": 0.65,
+  "authorization": "用户明确要求邮件附件参与本地模型训练。附件先解析、OCR与脱敏，再进入训练流程。"
+}

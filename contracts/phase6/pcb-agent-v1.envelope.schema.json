@@ -1,0 +1,140 @@
+{
+  "$id": "pcb-agent-v1.envelope.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "data_egress": {
+            "const": "none"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "external_services": {
+            "const": false
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "data_egress": {
+            "const": "sanitized_evidence"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "external_services": {
+            "const": true
+          }
+        }
+      }
+    }
+  ],
+  "properties": {
+    "catalog_version": {
+      "pattern": "^VER_[0-9A-F]{24}$",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "contract_version": {
+      "const": "pcb-agent-v1"
+    },
+    "data_egress": {
+      "enum": [
+        "none",
+        "sanitized_evidence"
+      ]
+    },
+    "errors": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "maxLength": 80,
+            "minLength": 1,
+            "type": "string"
+          },
+          "details": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "message": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "type": "object"
+      },
+      "maxItems": 20,
+      "minItems": 0,
+      "type": "array"
+    },
+    "external_services": {
+      "type": "boolean"
+    },
+    "read_only": {
+      "const": true
+    },
+    "request_id": {
+      "maxLength": 80,
+      "minLength": 5,
+      "pattern": "^REQ_[A-Za-z0-9_-]{1,64}$",
+      "type": "string"
+    },
+    "result": {
+      "type": "object"
+    },
+    "status": {
+      "enum": [
+        "ok",
+        "answered",
+        "no_evidence",
+        "needs_clarification",
+        "invalid_request",
+        "policy_blocked",
+        "provider_failed",
+        "fallback",
+        "error"
+      ]
+    },
+    "warnings": {
+      "items": {
+        "maxLength": 1000,
+        "minLength": 0,
+        "type": "string"
+      },
+      "maxItems": 50,
+      "minItems": 0,
+      "type": "array"
+    }
+  },
+  "required": [
+    "contract_version",
+    "request_id",
+    "status",
+    "read_only",
+    "external_services",
+    "data_egress",
+    "catalog_version",
+    "warnings",
+    "errors",
+    "result"
+  ],
+  "title": "PCB Agent Envelope v1",
+  "type": "object"
+}

@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "mode": "local_review_candidates",
+  "preserve_process_parameters": true,
+  "extract_attachments": false,
+  "export_exact_dates": false,
+  "export_headers": false,
+  "export_folder_names": false,
+  "export_source_filename": false,
+  "external_services": false,
+  "training_release_requires_review": true,
+  "sensitive_terms_file": ".private/sensitive_terms.txt",
+  "comment": "公司简称、内部代号、材料牌号等可在 sensitive_terms_file 中本地补充，每行一个，然后重新生成候选集。该文件禁止提交版本库。"
+}

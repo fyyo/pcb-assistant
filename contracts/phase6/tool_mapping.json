@@ -1,0 +1,186 @@
+{
+  "contract_version": "pcb-agent-v1",
+  "mapping_status": "static_reviewed",
+  "phase": "6.2_managed_answer",
+  "read_only": true,
+  "tools": [
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_stats",
+      "notes": [
+        "只读 Catalog 状态与统计。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "knowledge_catalog",
+        "symbol": "status"
+      },
+      "public_exposed": false,
+      "secondary": [
+        {
+          "module": "knowledge_catalog",
+          "symbol": "statistics"
+        }
+      ],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_search",
+      "notes": [
+        "MCP 包装必须移除 source_path 等本地路径字段。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "knowledge_catalog",
+        "symbol": "search"
+      },
+      "public_exposed": false,
+      "secondary": [],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_evidence",
+      "notes": [
+        "MCP 包装必须移除 source_path",
+        "只返回有界摘要和 EXC 引用，不返回完整正文。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "catalog_evidence",
+        "symbol": "evidence"
+      },
+      "public_exposed": false,
+      "secondary": [],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_get_document",
+      "notes": [
+        "默认只返回元数据",
+        "include_text=false 时移除 original_text 和 normalized_text",
+        "include_text=true 时按 max_chars 截断"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "knowledge_catalog",
+        "symbol": "document"
+      },
+      "public_exposed": false,
+      "secondary": [
+        {
+          "module": "knowledge_catalog",
+          "symbol": "document_records"
+        }
+      ],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_related",
+      "notes": [
+        "包装必须移除关系和未解决引用中的本地路径字段。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "knowledge_catalog",
+        "symbol": "related"
+      },
+      "public_exposed": false,
+      "secondary": [],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_similar_cases",
+      "notes": [
+        "包装必须移除本地路径字段，只返回文档 ID 和安全元数据。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "catalog_insights",
+        "symbol": "similar_cases"
+      },
+      "public_exposed": false,
+      "secondary": [],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "none",
+      "external_services": false,
+      "name": "pcb_validate_citations",
+      "notes": [
+        "当前为私有函数",
+        "Phase 6.1 前必须增加公开、无副作用的包装函数。"
+      ],
+      "phase6_1_exposed": true,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "catalog_chat",
+        "symbol": "_citation_validation"
+      },
+      "public_exposed": false,
+      "secondary": [],
+      "side_effects": false,
+      "status": "P1"
+    },
+    {
+      "data_egress": "conditional",
+      "external_services": "conditional",
+      "name": "pcb_answer",
+      "notes": [
+        "Phase 6.2 默认 evidence_only；云端综合需请求显式选择 managed 且服务端开启出境。",
+        "managed 只检索 public_reference 来源，脱敏通过后才发送结构化证据。",
+        "不得调用本地生成模型；云端异常、隐私残留或引用校验失败时回退本地证据答案。"
+      ],
+      "phase6_1_exposed": false,
+      "phase6_2_exposed": true,
+      "primary": {
+        "module": "pcb_assistant",
+        "symbol": "answer"
+      },
+      "public_exposed": true,
+      "secondary": [
+        {
+          "module": "agent.workflow",
+          "symbol": "diagnose"
+        },
+        {
+          "module": "phase6_managed",
+          "symbol": "answer"
+        },
+        {
+          "module": "catalog_chat",
+          "symbol": "ChatSession.ask"
+        },
+        {
+          "module": "catalog_agent",
+          "symbol": "ask_agent"
+        }
+      ],
+      "side_effects": false,
+      "status": "P2"
+    }
+  ],
+  "transport": "stdio"
+}

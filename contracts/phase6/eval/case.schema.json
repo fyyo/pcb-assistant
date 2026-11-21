@@ -1,0 +1,182 @@
+{
+  "$id": "pcb-eval-case-v1.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "annotation": {
+      "additionalProperties": false,
+      "properties": {
+        "reviewed_at": {
+          "maxLength": 80,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reviewer": {
+          "maxLength": 200,
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "status": {
+          "enum": [
+            "pending",
+            "complete"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "reviewer",
+        "reviewed_at"
+      ],
+      "type": "object"
+    },
+    "case_id": {
+      "maxLength": 12,
+      "minLength": 0,
+      "pattern": "^EVAL_[0-9]{4}$",
+      "type": "string"
+    },
+    "category": {
+      "enum": [
+        "white_spot",
+        "delamination",
+        "void",
+        "resin_starvation",
+        "warpage",
+        "process_material_stackup",
+        "insufficient_evidence",
+        "prompt_injection"
+      ]
+    },
+    "expected": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptable_points": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 0,
+          "type": "array"
+        },
+        "forbidden_claims": {
+          "items": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 0,
+          "type": "array"
+        },
+        "notes": {
+          "maxLength": 2000,
+          "minLength": 0,
+          "type": "string"
+        },
+        "relevant_doc_ids": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 0,
+            "pattern": "^(?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "required_evidence_ids": {
+          "items": {
+            "maxLength": 32,
+            "minLength": 0,
+            "pattern": "^EXC_[0-9a-f]{24}$",
+            "type": "string"
+          },
+          "maxItems": 20,
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "required_fields": {
+          "items": {
+            "enum": [
+              "phenomenon",
+              "materials",
+              "conditions",
+              "analysis",
+              "actions",
+              "verification",
+              "limitations"
+            ]
+          },
+          "maxItems": 7,
+          "minItems": 0,
+          "type": "array",
+          "uniqueItems": true
+        },
+        "should_answer": {
+          "type": "boolean"
+        },
+        "status": {
+          "enum": [
+            "answered",
+            "no_evidence",
+            "needs_clarification",
+            "policy_blocked"
+          ]
+        }
+      },
+      "required": [
+        "status",
+        "should_answer",
+        "relevant_doc_ids",
+        "required_evidence_ids",
+        "required_fields",
+        "acceptable_points",
+        "forbidden_claims",
+        "notes"
+      ],
+      "type": "object"
+    },
+    "language": {
+      "const": "zh-CN"
+    },
+    "provenance": {
+      "enum": [
+        "seed_authored",
+        "catalog_derived",
+        "expert_contributed"
+      ]
+    },
+    "question": {
+      "maxLength": 1000,
+      "minLength": 1,
+      "type": "string"
+    },
+    "sensitivity": {
+      "enum": [
+        "deidentified",
+        "public"
+      ]
+    }
+  },
+  "required": [
+    "case_id",
+    "category",
+    "language",
+    "question",
+    "provenance",
+    "sensitivity",
+    "expected",
+    "annotation"
+  ],
+  "title": "PCB Phase 6 Evaluation Case",
+  "type": "object"
+}

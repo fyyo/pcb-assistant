@@ -1,0 +1,10 @@
+{
+  "case_id": "white_spot_001",
+  "question": "压合后板边出现白斑，PP 是 FR-4，六层板，使用真空压机，应该怎么排查？",
+  "defect": "white_spot",
+  "stage": "lamination",
+  "location": "board_edge",
+  "material": "FR-4",
+  "stackup": "6层",
+  "equipment": "真空压机"
+}
