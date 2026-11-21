@@ -4,7 +4,7 @@
 
 ## 邮件与附件
 
-处理 PST 前，核对来源路径、`privacy_policy.json`、`attachment_policy.json`，安装 `requirements/requirements.txt` 与 `requirements/requirements-attachments.txt` 所需依赖。PST 读取需要本机可用的 libpff；部分旧 Office 格式需要额外解析工具。
+处理 PST 前，核对来源路径、`config/privacy.json`、`config/attachments.json`，安装 `requirements/requirements.txt` 与 `requirements/requirements-attachments.txt` 所需依赖。PST 读取需要本机可用的 libpff；部分旧 Office 格式需要额外解析工具。
 
 ```powershell
 python -m pcb_assistant.ingestion.mail --help

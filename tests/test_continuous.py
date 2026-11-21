@@ -40,7 +40,8 @@ def model_fixture(root, name='model_training_fixture', data=None):
 
 def foundation_fixture(root):
     setup(root)
-    dump_json(root / 'continuous_policy.json', read(ROOT / 'continuous_policy.json'))
+    (root / 'config/training').mkdir(parents=True)
+    dump_json(root / 'config/training/continuous.json', read(ROOT / 'config/training/continuous.json'))
     data = root / 'data/training_data_fixture'
     data.mkdir()
     texts = {'train': '压合中出现边缘白斑，需要核查真空记录并采取切片观察。试验尚未完成，原因和改善结果仍需进一步确认。',
@@ -160,7 +161,7 @@ class ContinuousTests(unittest.TestCase):
             publish(candidate, self.pointer, {'accepted': True}, self.root)
 
     def test_gate_requires_gain_and_preserves_individual_passes(self):
-        policy = read(self.root / 'continuous_policy.json')
+        policy = read(self.root / 'config/training/continuous.json')
         base = {'losses': {'frozen_domain': 3., 'frozen_instruction': 2., 'new_domain': 3.},
                 'checks': {'a': {'passed': True, 'critical': True}, 'b': {'passed': True, 'critical': False}}}
         self.assertFalse(decide(base, base, policy)['accepted'])

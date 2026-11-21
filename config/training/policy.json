@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "local_model_training_allowed": true,
+  "local_attachment_training_allowed": true,
+  "manual_review_required": false,
+  "mail_upload_allowed": false,
+  "public_model_download_allowed": true,
+  "trained_artifacts_are_private": true,
+  "source_status": "unverified_email_discussion",
+  "source_instructions_executable": false,
+  "local_public_curriculum_training_allowed": true
+}

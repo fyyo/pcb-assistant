@@ -43,7 +43,7 @@ def plan(source):
     completed = False
     if (prepared / 'report.json').exists():
         data_hash = digest_file(prepared / 'report.json')
-        revision = json.loads((ROOT / 'base_model.json').read_text())['revision']
+        revision = json.loads((ROOT / 'config/training/model.json').read_text())['revision']
         for config_path in sorted((ROOT / 'data').glob('model_training*/run_config.json')):
             configuration = json.loads(config_path.read_text())
             if recipe_matches(configuration, data_hash, revision):

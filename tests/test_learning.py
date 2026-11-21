@@ -52,7 +52,8 @@ class LearningTests(unittest.TestCase):
             (source / 'report.json').write_text(json.dumps({'status': 'completed_local_candidates_require_review',
                 'artifacts': {original.name: {'sha256': source_hash}}}))
             (prepared / 'report.json').write_text(json.dumps({'status': 'completed', 'source_artifact_sha256': source_hash}))
-            (root / 'base_model.json').write_text('{"revision":"synthetic-base"}')
+            (root / 'config/training').mkdir(parents=True)
+            (root / 'config/training/model.json').write_text('{"revision":"synthetic-base"}')
             config = {'data_report_sha256': digest_file(prepared / 'report.json'), 'base_revision': 'synthetic-base',
                       'domain_steps': 0, 'instruction_epochs': 1, 'instruction_limit': 0, 'sequence_length': 512,
                       'gradient_accumulation': 4, 'validation_batches': 64}

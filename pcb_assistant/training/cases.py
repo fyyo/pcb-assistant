@@ -34,7 +34,7 @@ def validate_tokens(data):
 def run():
     from pcb_assistant.training.lessons import prepare
     with lock('case_study_runner'), lock('learning_cycle', blocking=True):
-        if read(ROOT / 'continuous_policy.json').get('paused_by_user'):
+        if read(ROOT / 'config/training/continuous.json').get('paused_by_user'):
             emit('existing_case_study_paused_by_user')
             return
         stop = threading.Event()
@@ -125,7 +125,7 @@ def run():
 
 def start():
     with lock('case_study_start'):
-        if read(ROOT / 'continuous_policy.json').get('paused_by_user'):
+        if read(ROOT / 'config/training/continuous.json').get('paused_by_user'):
             emit('existing_case_study_paused_by_user')
             return
         record = read(ROOT / 'data/continuous/case_study_process.json', {})

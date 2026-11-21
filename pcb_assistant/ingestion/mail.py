@@ -184,7 +184,7 @@ def run(args):
             f.write(secrets.token_bytes(32))
         key_path.chmod(0o600)
     key=key_path.read_bytes()
-    policy=json.loads((workspace/'privacy_policy.json').read_text())
+    policy=json.loads((workspace/'config/privacy.json').read_text())
     # Fail closed if configuration requests an unsupported or less private mode.
     required={'mode':'local_review_candidates','preserve_process_parameters':True,
               'extract_attachments':False,'export_exact_dates':False,'export_headers':False,

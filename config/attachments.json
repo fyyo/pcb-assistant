@@ -12,6 +12,5 @@
   "max_document_characters": 2000000,
   "max_table_rows": 100000,
   "max_table_columns": 256,
-  "ocr_min_confidence": 0.65,
-  "authorization": "用户明确要求邮件附件参与本地模型训练。附件先解析、OCR与脱敏，再进入训练流程。"
+  "ocr_min_confidence": 0.65
 }
