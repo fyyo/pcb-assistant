@@ -1,40 +1,23 @@
-# 维护脚本
+# 维护工具
 
-日常使用从根目录 `knowledge_catalog.py` 和 `phase6_mcp.py` 进入；以下工具按需运行。
+日常查询使用根目录的 `knowledge_catalog.py` 和 `phase6_mcp.py`。其他工具按需执行；实际读写路径和覆盖行为以各模块的 `--help` 为准。
 
-可复用业务实现集中在 `pcb_assistant/`：邮件与 OCR 入口使用 `python -m pcb_assistant.ingestion.<模块>`，训练使用 `python -m pcb_assistant.training.<模块>`，评测与客户端验收使用 `python -m pcb_assistant.evaluation.<模块>`。本目录保留备份、数据修复、审计及公开资料维护工具；包内模块不要直接按文件路径运行。
-
-| 工具 | 用途 |
+| 目录或工具 | 用途 |
 | --- | --- |
-| `catalog_backup.py` | 创建、校验备份，恢复到新目录 |
-| `check_database_delivery.py` | 核对本机已交付实例的历史基线，需要私有记录与备份 |
-| `analyze_missing_references.py` | 审计缺失引用，生成本机报告 |
-| `analyze_missing_reference_origin.py` | 按来源身份分析缺失父邮件，不读取邮件正文 |
-| `evaluate_catalog_quality.py` | 相似案例推荐一致性评估 |
-| `rewash_mail_names.py` | 对已有脱敏来源重新应用姓名清洗规则 |
-| `compress_catalog_jsonl.py` | 将 Catalog 导出转换为确定性 gzip 并验证 |
-| `public_data/` | 公开参考资料收集、提取、构建与校验 |
-| `training/` | 可选模型下载、训练数据准备与评估 |
-| `attachments/` | 附件盘点、OCR 服务与处理校验 |
-| `data/` | 邮件归档、脱敏派生、候选及案例身份修复、Dify 文件导出 |
-| `audits/` | 现有案例盘点、邮件语料审计、OCR 补充核验 |
-| `evaluation/` | 可选的内部试用人工复核包 |
-| `experimental/` | 可选 OpenViking 影子检索实验 |
+| `catalog_backup.py` | 创建、校验并恢复到新目录 |
+| `check_database_delivery.py` | 对照本机私有数据库、备份和维护基线 |
+| `analyze_missing_references.py`、`analyze_missing_reference_origin.py` | 审计未解析来源，不伪造缺失身份 |
+| `public_data/` | 收集、构建和校验公开参考资料 |
+| `attachments/` | 附件盘点、OCR 服务和批次校验 |
+| `data/` | 本机邮件归档、脱敏候选、身份修复和文件导出 |
+| `audits/`、`evaluation/` | 本机资料审计与可选人工复核 |
+| `training/`、`experimental/` | 可选训练支持与隔离实验 |
+
+包内可复用功能位于 `pcb_assistant/`，使用 `python -m pcb_assistant.<子包>.<模块>` 启动。审计和数据工具的本机来源默认值不能直接用于其他数据集；报告写入 `.private/`。不要把真实来源文本、报告或本机数据加入 Git。
 
 ```powershell
-python -X utf8 -B scripts/catalog_backup.py --help
-python -X utf8 -B scripts/analyze_missing_references.py --help
+python -m scripts.catalog_backup --help
 python -m scripts.attachments.validate_attachments --help
 python -m scripts.data.organize_mail_archive --help
-python -m scripts.data.derive_mail_candidates --help
-python -m scripts.data.export_dify --help
 python -m scripts.audits.verify_ocr_supplement --help
-python -m scripts.evaluation.internal_pilot_review --help
-python -m scripts.experimental.openviking_shadow --help
 ```
-
-历史引用审计保留 `v1` 和 `v3` 来源配置，便于复现；新数据需要明确选择适用的来源和输出。报告保存到 `.private/`，或使用 `docs/` 下被 Git 忽略的日期命名文件，避免上传来源明细。来源分析可读取本机 `.private/project_records/` 中已归档的审计输入。
-
-以上模块命令从项目根目录执行。`data/rewash_case_identities.py` 提供供脚本及测试调用的修复函数；`audits/audit_existing_cases.py` 运行时会生成本地盘点。运行会写入数据的工具前，先查看其参数并明确输入输出；它们不会随普通问答自动运行。
-
-旧版固定资产计数核验脚本已经删除，当前数据库验证使用 `knowledge_catalog.py --catalog <目录> validate`。备份和恢复见[数据库维护](../docs/DATABASE_OPERATIONS.md)。

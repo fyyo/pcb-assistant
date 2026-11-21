@@ -1,6 +1,6 @@
 # Phase 6 契约与评测骨架
 
-此目录保存内部接口 schema、工具映射和合成评测骨架。当前公开 MCP 只暴露 `pcb_answer`，接入方式见[统一 MCP](../../docs/UNIFIED_PCB_ASSISTANT.md)。
+此目录保存内部接口 schema、工具映射和合成评测骨架。当前公开 MCP 只暴露 `pcb_answer`，接入方式见[MCP 指南](../../docs/UNIFIED_PCB_ASSISTANT.md)。
 
 ## 文件
 

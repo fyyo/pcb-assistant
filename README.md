@@ -22,7 +22,7 @@ python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements/requirements-core.txt
 ```
 
-以上是使用已有 Catalog 进行本地检索与证据问答的最小依赖。邮件清洗、附件提取、OCR 和训练分别使用 [requirements/](requirements/README.md) 中的依赖集，按需安装；原始 PST 处理还需要可用的 `libpff`。
+以上是使用已有 Catalog 进行本地检索与证据问答的最小依赖。邮件清洗、附件提取、OCR 和训练的按需流程见[数据处理](docs/DATA_PIPELINE.md)、[训练](docs/TRAINING.md)和[依赖说明](requirements/README.md)；原始 PST 处理还需要可用的 libpff。
 
 ## 准备本地数据
 
@@ -35,7 +35,7 @@ python -m venv .venv
 .venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog status
 ```
 
-从自有资料构建时，先按[邮件与附件处理说明](ATTACHMENTS.md)准备脱敏来源，再查看 `knowledge_catalog.py build --help` 和 `ingest --help`。导入和增量处理使用新目录，保留原始来源。
+从自有资料构建时，先按[数据处理说明](docs/DATA_PIPELINE.md)准备脱敏来源，再查看 `knowledge_catalog.py build --help` 和 `ingest --help`。导入和增量处理使用新目录，保留原始来源。
 
 本机默认目录在 `pcb_assistant/catalog/common.py` 中配置为 `data/phase3_catalog_v9`。其他机器可直接通过参数选库。
 
@@ -92,6 +92,6 @@ python -m venv .venv
 .venv\Scripts\python.exe -X utf8 -B -m unittest -v tests.test_catalog_backup tests.test_database_delivery
 ```
 
-进一步阅读：[文档索引](docs/README.md)、[MCP 接入](docs/UNIFIED_PCB_ASSISTANT.md)、[数据库维护](docs/DATABASE_OPERATIONS.md)、[维护脚本](scripts/README.md)、[测试说明](tests/README.md)、[GitHub 上传](docs/GITHUB.md)。
+进一步阅读：[MCP 接入](docs/UNIFIED_PCB_ASSISTANT.md)、[数据处理](docs/DATA_PIPELINE.md)、[诊断](docs/DIAGNOSIS.md)、[数据库维护](docs/DATABASE_OPERATIONS.md)、[训练](docs/TRAINING.md)、[开发](docs/DEVELOPMENT.md)、[测试](tests/README.md)。
 
 GitHub Actions 在 Windows／Linux、Python 3.11／3.12 上运行依赖一致性、接口契约和含 CPU OCR 的合成回归。OCR 1.4 后端声明要求 Python < 3.13；使用完整附件／测试依赖时选择 Python 3.11 或 3.12。仅使用已有 Catalog 的核心依赖不受此 OCR 限制。开发约定见[开发说明](docs/DEVELOPMENT.md)。
