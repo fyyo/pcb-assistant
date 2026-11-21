@@ -29,7 +29,7 @@ class AgentJobsTests(unittest.TestCase):
             job_id = started["job_id"]
             self.assertEqual(started["status"], "running")
             self.assertEqual(started["progress"], {"completed": 0, "total": 1, "case_id": None})
-            self.assertTrue(Path(started["report_path"]).is_relative_to(root))
+            self.assertTrue(Path(started["report_path"]).resolve().is_relative_to(root.resolve()))
             with patch("agent.jobs._alive", return_value=True):
                 self.assertEqual(jobs.get_job(job_id, root=root)["status"], "running")
 

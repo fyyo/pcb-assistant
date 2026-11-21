@@ -21,7 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        python: ['3.11', '3.13']
+        # The bundled rapidocr-onnxruntime 1.4 backend requires Python < 3.13.
+        python: ['3.11', '3.12']
     env:
       PYTHONUTF8: '1'
       PYTHONDONTWRITEBYTECODE: '1'

@@ -65,3 +65,22 @@ class SyntheticCatalogTestCase(unittest.TestCase):
         context = phase6_mcp._catalog_context(cls.catalog)
         context.__enter__()
         cls.addClassCleanup(context.__exit__, None, None, None)
+
+
+class SyntheticManagedCatalogTestCase(SyntheticCatalogTestCase):
+    """Use real privacy rules with authored NER fixtures, without model downloads."""
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        import spacy
+        import pcb_assistant.interfaces.managed as managed
+        from pcb_assistant.privacy.mail import IdentityIndex, Sanitizer
+
+        zh = spacy.blank('zh')
+        en = spacy.blank('en')
+        zh.add_pipe('entity_ruler').add_patterns([{'label': 'PERSON', 'pattern': '测试小甲'}])
+        en.add_pipe('entity_ruler').add_patterns([{'label': 'PERSON', 'pattern': 'Fixture Person'}])
+        patcher = patch.object(managed, '_SANITIZER_COMPONENTS',
+                               (IdentityIndex().pattern(), Sanitizer, zh, en))
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)

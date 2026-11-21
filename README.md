@@ -94,4 +94,4 @@ python -m venv .venv
 
 进一步阅读：[文档索引](docs/README.md)、[MCP 接入](docs/UNIFIED_PCB_ASSISTANT.md)、[数据库维护](docs/DATABASE_OPERATIONS.md)、[维护脚本](scripts/README.md)、[测试说明](tests/README.md)、[GitHub 上传](docs/GITHUB.md)。
 
-GitHub Actions 配置在 Windows／Linux、Python 3.11／3.13 上运行依赖一致性、接口契约和合成回归检查。开发约定、贡献流程与运行命令见[开发说明](docs/DEVELOPMENT.md)。
+GitHub Actions 在 Windows／Linux、Python 3.11／3.12 上运行依赖一致性、接口契约和含 CPU OCR 的合成回归。OCR 1.4 后端声明要求 Python < 3.13；使用完整附件／测试依赖时选择 Python 3.11 或 3.12。仅使用已有 Catalog 的核心依赖不受此 OCR 限制。开发约定见[开发说明](docs/DEVELOPMENT.md)。

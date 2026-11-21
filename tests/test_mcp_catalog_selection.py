@@ -25,7 +25,7 @@ class McpCatalogSelectionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.temp = tempfile.TemporaryDirectory()
         cls.addClassCleanup(cls.temp.cleanup)
-        cls.root = Path(cls.temp.name)
+        cls.root = Path(cls.temp.name).resolve()
         cls.catalogs = []
         for name in ('first', 'second'):
             root = cls.root / name

@@ -28,6 +28,12 @@ PST parsing, spaCy language models, private datasets, GPU OCR or training weight
 OCR tests use the CPU models bundled with the OCR package. Real mail cleaning
 requires the full base set and its language models, as described in the data guides.
 
+Use Python 3.11 or 3.12 for a fresh attachment/test environment: the pinned
+`rapidocr-onnxruntime` 1.4 series declares Python < 3.13. CI covers these two
+versions on Windows and Linux. Retrieval-only installation does not install OCR.
+Managed-answer tests use the real privacy rules with authored spaCy entity
+fixtures; production managed requests still require the installed privacy models.
+
 The `*.lock.txt` files record the existing local processing environments. They
 are retained for reproducing those runs; CI installs `requirements-test.txt` on
 Windows and Linux rather than copying a machine-specific environment snapshot.

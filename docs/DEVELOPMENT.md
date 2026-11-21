@@ -19,7 +19,7 @@ python -X utf8 -B -m pcb_assistant.interfaces.mapping
 
 ## 自动检查
 
-[CI 配置](../.github/workflows/ci.yml) 在推送、PR 或手动触发时运行，覆盖 Windows／Linux 与 Python 3.11／3.13。检查包括依赖一致性、契约、评测案例、工具映射和全量合成测试。CI 使用全新源码目录；私有数据不参与流程。
+[CI 配置](../.github/workflows/ci.yml) 在推送、PR 或手动触发时运行，覆盖 Windows／Linux 与 Python 3.11／3.12。完整测试依赖的 `rapidocr-onnxruntime` 1.4 声明要求 Python < 3.13，因此新建完整测试环境应使用 3.11 或 3.12。检查包括依赖一致性、契约、评测案例、工具映射和全量合成测试。CI 使用全新源码目录；私有数据不参与流程。
 
 GitHub 仓库创建后，可将 CI 的四个矩阵检查设为主分支合并条件。工作流随源码提供，远端执行结果以上传后的 Actions 页面为准。
 
