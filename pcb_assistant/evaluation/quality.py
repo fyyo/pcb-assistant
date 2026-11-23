@@ -25,7 +25,11 @@ import pcb_assistant.interfaces.managed as phase6_managed
 from pcb_assistant.paths import ROOT
 RUN_SCHEMA = "pcb-phase6-eval-run-v1"
 DEFAULT_LIMIT = 8
-DEFAULT_WORKERS = 4
+# The evidence p95 gate is defined for sequential runs: each case is timed
+# end to end, and parallel workers inflate per-case latency through SQLite and
+# CPU contention. Parallel runs remain available for quick smoke checks, but
+# their p95 is reported as not comparable instead of passed or failed.
+DEFAULT_WORKERS = 1
 DEFAULT_RESULT_ROOT = ROOT / "data" / "phase6_eval_runs"
 
 
@@ -247,7 +251,15 @@ def _gold_metrics(cases, rows):
 
 
 def _threshold(metric, threshold, value, *, unavailable_reason=None,
-               comparison="gte"):
+               comparison="gte", not_comparable_reason=None):
+    if not_comparable_reason is not None:
+        return {
+            "metric": metric,
+            "threshold": threshold,
+            "value": value,
+            "status": "unavailable",
+            "reason": not_comparable_reason,
+        }
     if value is None:
         return {
             "metric": metric,
@@ -266,7 +278,7 @@ def _threshold(metric, threshold, value, *, unavailable_reason=None,
     }
 
 
-def _thresholds(annotation, rows, metrics, evidence_p95):
+def _thresholds(annotation, rows, metrics, evidence_p95, workers=1):
     citation = _citation_check(rows)
     injection = _prompt_injection_check(rows)
     egress = _egress_check(rows)
@@ -300,8 +312,12 @@ def _thresholds(annotation, rows, metrics, evidence_p95):
         _threshold("managed_p95_seconds", 30.0, None,
                    unavailable_reason="no_real_managed_request_in_local_run",
                    comparison="lte"),
-        _threshold("evidence_p95_seconds", 2.0, evidence_p95,
-                   comparison="lte"),
+        _threshold(
+            "evidence_p95_seconds", 2.0, evidence_p95,
+            comparison="lte",
+            not_comparable_reason=(
+                None if int(workers) == 1
+                else "parallel_run_not_comparable_to_sequential_gate")),
         _threshold("severe_unsupported_conclusions", 0, None,
                    unavailable_reason="requires_expert_answer_review"),
     ]
@@ -317,7 +333,8 @@ def _summarize(cases, rows, *, limit, workers):
     evidence_p95 = _p95(latencies)
     evidence_p95_seconds = (
         round(evidence_p95 / 1000, 6) if evidence_p95 is not None else None)
-    thresholds = _thresholds(annotation, rows, metrics, evidence_p95_seconds)
+    thresholds = _thresholds(
+        annotation, rows, metrics, evidence_p95_seconds, workers)
     blockers = [
         item["metric"] for item in thresholds if item["status"] != "passed"]
     blockers.append("phase6_4_client_trial_not_run")

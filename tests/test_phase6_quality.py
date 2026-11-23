@@ -118,6 +118,39 @@ class Phase6QualityTests(unittest.TestCase):
         self.assertEqual(metric["value"], 2.5)
         self.assertEqual(metric["status"], "failed")
 
+    def test_parallel_run_marks_p95_not_comparable(self):
+        case = next(
+            case for case in load_cases() if case["case_id"] == "EVAL_0141")
+        row = {
+            "case_id": case["case_id"],
+            "category": case["category"],
+            "expected_status": case["expected"]["status"],
+            "predicted_status": "policy_blocked",
+            "gate_status": "policy_blocked",
+            "retrieved_excerpt_ids": [],
+            "covered_fields": [],
+            "citation_validation": "passed",
+            "invalid_citation_count": 0,
+            "citation_count": 0,
+            "generated_by_model": False,
+            "external_services": False,
+            "data_egress": "none",
+            "latency_ms": 1200,
+        }
+        summary = quality._summarize([case], [row], limit=8, workers=4)
+        metric = next(
+            item for item in summary["thresholds"]
+            if item["metric"] == "evidence_p95_seconds")
+        self.assertEqual(metric["value"], 1.2)
+        self.assertEqual(metric["status"], "unavailable")
+        self.assertEqual(
+            metric["reason"],
+            "parallel_run_not_comparable_to_sequential_gate")
+        self.assertIn("evidence_p95_seconds", summary["release_blockers"])
+
+    def test_default_workers_measure_latency_sequentially(self):
+        self.assertEqual(quality.DEFAULT_WORKERS, 1)
+
     def test_display_path_handles_relative_and_external_paths(self):
         self.assertEqual(
             quality._display_path(Path(".tmp_work/example.json")),
