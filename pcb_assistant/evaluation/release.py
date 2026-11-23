@@ -26,6 +26,10 @@ from pcb_assistant.interfaces.contract import (
 
 from pcb_assistant.paths import ROOT
 DOCS = ROOT / 'docs'
+# Dated acceptance reports live in docs/ while in use and are later archived
+# under .private/project_records/docs/ to keep the public docs slim. The audit
+# must still find them; a report that exists nowhere stays a blocker.
+ARCHIVE_DOCS = ROOT / '.private' / 'project_records' / 'docs'
 REPORT_SCHEMA = 'pcb-phase6-release-readiness-v1'
 EXPECTED_CASES = 150
 EXPECTED_TOOLS = 8
@@ -77,8 +81,14 @@ def _load_json(path):
 
 
 def _latest(pattern):
-    matches = sorted(DOCS.glob(pattern), key=lambda item: item.name)
-    return matches[-1] if matches else None
+    '''Newest dated report; docs/ wins over the archive for the same date.'''
+    found = [
+        (path.name, -priority, path)
+        for priority, directory in enumerate((DOCS, ARCHIVE_DOCS))
+        for path in directory.glob(pattern)
+        if path.is_file()
+    ]
+    return max(found)[2] if found else None
 
 
 def load_annotation_state(path=ANNOTATIONS_PATH):
@@ -502,6 +512,7 @@ def evaluate_readiness(
         'notes': [
             'This audit only reads existing local evidence and never creates gold.',
             'A missing report is a blocker, not a pass.',
+            'Dated reports are read from docs/ or the archived .private/project_records/docs/.',
             'The audit itself does not authorize a release or cloud egress.',
         ],
     }

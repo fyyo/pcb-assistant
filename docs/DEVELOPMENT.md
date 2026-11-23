@@ -51,4 +51,4 @@ python -X utf8 -B -m pcb_assistant.interfaces.mapping
 
 以上工具的输入要求和写入选项以各自 `--help` 为准。真实问题、答案、证据正文、标注和失败明细放入 `.private/`，不要加入源码或报告文档。
 
-历史阶段设计、试点、性能计数和交接记录保存在本机 `.private/project_records/`。仓库文档描述当前工作流；修改接口时同步更新 schema、合成测试与使用示例。
+历史阶段设计、试点、性能计数和交接记录保存在本机 `.private/project_records/`。带日期的验收报告在 `docs/` 使用一段时间后移入 `.private/project_records/docs/`，`python -m pcb_assistant.evaluation.release` 先查 `docs/`、再查该归档目录；两边都不存在的报告仍按缺失阻断，不会因为归档而放宽发布条件。仓库文档描述当前工作流；修改接口时同步更新 schema、合成测试与使用示例。
