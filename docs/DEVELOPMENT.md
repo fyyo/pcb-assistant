@@ -37,6 +37,8 @@ python -X utf8 -B -m pcb_assistant.interfaces.mapping
 
 接口 schema、工具映射与合成评测骨架保存在 [contracts/phase6/](../contracts/phase6/README.md)。公开 MCP 只暴露 `pcb_answer`；其他工具定义服务于内部接口和兼容实现，不应照历史列表注册额外 MCP 工具。
 
+本地评测 `python -m pcb_assistant.evaluation.quality` 默认顺序执行（`--workers 1`），证据延迟 p95 只在该模式与 2 秒门槛可比；`--workers` 大于 1 只适合快速冒烟，此时 p95 会标记为不可比而不是通过或失败。
+
 有自有 Catalog 时运行 `python -m pcb_assistant.evaluation.stdio_trial --catalog <目录> --json` 检查真实 stdio 子进程。`python -m pcb_assistant.evaluation.codex_preflight` 是可选真实客户端检查；本机 stdio 通过不等于任意客户端或模型回合已通过。
 
 可选流程仍在源码中保留：

@@ -335,13 +335,24 @@ def evaluate_readiness(
     ))
 
     evidence_p95_ok = _metric_passed(metrics, 'evidence_p95_seconds')
+    eval_runtime = (eval_report or {}).get('runtime') if isinstance(
+        eval_report, dict) else {}
+    eval_workers = eval_runtime.get('workers') if isinstance(
+        eval_runtime, dict) else None
     checks.append(_check(
         'evidence_p95',
         evidence_p95_ok,
-        observed=_metric_value(metrics, 'evidence_p95_seconds'),
+        observed={
+            'seconds': _metric_value(metrics, 'evidence_p95_seconds'),
+            # A parallel run inflates per-case latency; only sequential runs
+            # are comparable with the 2 second gate.
+            'workers': eval_workers,
+        },
         source=source_values['local_eval'],
         blocker='evidence_p95_exceeded',
-        next_action='Reduce deterministic evidence latency to 2 seconds or less.',
+        next_action=(
+            'Re-run the local evaluation sequentially with --workers 1 and '
+            'keep evidence latency at 2 seconds or less.'),
     ))
 
     managed_p95 = None
