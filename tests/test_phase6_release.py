@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import tempfile
 import unittest
+from unittest import mock
 
 import pcb_assistant.evaluation.release as release
 
@@ -212,6 +213,48 @@ class Phase6ReleaseTests(unittest.TestCase):
                       summary['release_blockers'])
         self.assertNotIn('dsh_client_trial_not_run',
                          summary['release_blockers'])
+
+    def test_latest_report_falls_back_to_archive(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            docs = root / 'docs'
+            archive = root / 'archive'
+            docs.mkdir()
+            archive.mkdir()
+            expected = archive / 'PHASE6_3_LOCAL_EVAL_20261027.json'
+            expected.write_text('{}', encoding='utf-8')
+            with mock.patch.object(release, 'DOCS', docs), \
+                    mock.patch.object(release, 'ARCHIVE_DOCS', archive):
+                self.assertEqual(
+                    release._latest('PHASE6_3_LOCAL_EVAL_*.json'),
+                    expected,
+                )
+                self.assertIsNone(
+                    release._latest('PHASE6_3_SEVERE_REVIEW_*.json'))
+                (docs / expected.name).write_text('{}', encoding='utf-8')
+                self.assertEqual(
+                    release._latest('PHASE6_3_LOCAL_EVAL_*.json'),
+                    docs / expected.name,
+                )
+
+    def test_audit_reads_archived_eval_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            docs = root / 'docs'
+            archive = root / 'archive'
+            docs.mkdir()
+            archive.mkdir()
+            (archive / 'PHASE6_3_LOCAL_EVAL_20261027.json').write_text(
+                json.dumps(_passed_eval_report()), encoding='utf-8')
+            with mock.patch.object(release, 'DOCS', docs), \
+                    mock.patch.object(release, 'ARCHIVE_DOCS', archive):
+                summary = release.run_audit(
+                    annotations=root / 'missing.jsonl')
+        source = summary['inputs']['local_eval']
+        self.assertTrue(source['present'])
+        self.assertTrue(source['source'].endswith(
+            'PHASE6_3_LOCAL_EVAL_20261027.json'))
+        self.assertNotIn('local_eval_invalid', summary['release_blockers'])
 
     def test_report_contains_no_local_path_or_secret(self):
         secret = 'sk-' + 'a' * 24
