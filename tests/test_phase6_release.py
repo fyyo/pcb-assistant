@@ -214,6 +214,36 @@ class Phase6ReleaseTests(unittest.TestCase):
         self.assertNotIn('dsh_client_trial_not_run',
                          summary['release_blockers'])
 
+    def test_codex_report_string_tool_list_satisfies_bridge(self):
+        inputs = _inputs()
+        inputs['codex_report'] = copy.deepcopy(inputs['codex_report'])
+        inputs['codex_report']['tools'] = ['pcb_answer']
+        summary = release.evaluate_readiness(**inputs)
+        self.assertNotIn(
+            'codex_tool_bridge_incomplete', summary['release_blockers'])
+
+    def test_codex_report_extra_public_tool_blocks_bridge(self):
+        inputs = _inputs()
+        inputs['codex_report'] = copy.deepcopy(inputs['codex_report'])
+        inputs['codex_report']['tools'] = ['pcb_answer', 'pcb_evidence']
+        inputs['codex_report']['calls'] = [
+            {'tool': 'pcb_answer', 'status': 'passed'},
+            {'tool': 'pcb_evidence', 'status': 'passed'},
+        ]
+        summary = release.evaluate_readiness(**inputs)
+        self.assertIn(
+            'codex_tool_bridge_incomplete', summary['release_blockers'])
+
+    def test_codex_report_failed_call_blocks_bridge(self):
+        inputs = _inputs()
+        inputs['codex_report'] = copy.deepcopy(inputs['codex_report'])
+        inputs['codex_report']['tools'] = ['pcb_answer']
+        inputs['codex_report']['calls'] = [
+            {'tool': 'pcb_answer', 'status': 'failed'}]
+        summary = release.evaluate_readiness(**inputs)
+        self.assertIn(
+            'codex_tool_bridge_incomplete', summary['release_blockers'])
+
     def test_latest_report_falls_back_to_archive(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

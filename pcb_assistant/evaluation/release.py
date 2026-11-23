@@ -80,6 +80,21 @@ def _load_json(path):
     return value if isinstance(value, dict) else None
 
 
+def _tool_names(items):
+    """Collect tool names from either name strings or {name|tool: ...} dicts."""
+    names = set()
+    if not isinstance(items, list):
+        return names
+    for item in items:
+        if isinstance(item, str):
+            names.add(item)
+        elif isinstance(item, dict):
+            for key in ('name', 'tool'):
+                if isinstance(item.get(key), str):
+                    names.add(item[key])
+    return names
+
+
 def _latest(pattern):
     '''Newest dated report; docs/ wins over the archive for the same date.'''
     found = [
@@ -414,9 +429,9 @@ def evaluate_readiness(
         and (codex_report.get('client') or {}).get('real_vendor_client') is True
         and codex_report.get('codex_tool_call_complete') is True
         and len(codex_tools) == len(EXPECTED_PUBLIC_TOOLS)
-        and {item.get('name') for item in codex_tools if isinstance(item, dict)} == EXPECTED_PUBLIC_TOOLS
+        and _tool_names(codex_tools) == EXPECTED_PUBLIC_TOOLS
         and len(codex_calls) == len(EXPECTED_PUBLIC_TOOLS)
-        and {item.get('tool') for item in codex_calls if isinstance(item, dict)} == EXPECTED_PUBLIC_TOOLS
+        and _tool_names(codex_calls) == EXPECTED_PUBLIC_TOOLS
         and all(
             isinstance(item, dict) and item.get('status') == 'passed'
             for item in codex_calls
