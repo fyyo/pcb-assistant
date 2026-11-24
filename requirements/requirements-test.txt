@@ -2,5 +2,5 @@
 -r requirements-core.txt
 -r requirements-attachments.txt
 spacy>=3.8,<3.9
-Pillow>=10,<13
+Pillow>=13.0.0,<14
 beautifulsoup4>=4.12,<5
