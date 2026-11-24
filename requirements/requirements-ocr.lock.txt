@@ -7,7 +7,7 @@ nvidia-cudnn-cu11==8.9.6.50
 onnxruntime-gpu==1.18.0
 opencv-python==4.10.0.84
 packaging==26.3
-pillow==12.3.0
+pillow==13.0.0
 protobuf==7.36.2
 pyclipper==1.4.0
 pyyaml==6.0.3
