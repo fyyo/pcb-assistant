@@ -40,6 +40,14 @@ jobs:
             requirements/requirements-attachments.txt
       - name: Install test dependencies
         run: python -m pip install -r requirements/requirements-test.txt
+      - name: Install CJK fonts (Linux)
+        if: runner.os == 'Linux'
+        # The PDF fixture uses a non-embedded CJK font; PDFium needs a system
+        # CJK font (via fontconfig) to render it for the OCR test.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-noto-cjk fontconfig
+          fc-match 'Heiti' || true
       - name: Check dependency consistency
         run: python -m pip check
       - name: Validate contracts
