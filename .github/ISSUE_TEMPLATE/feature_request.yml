@@ -1,0 +1,34 @@
+name: 功能建议
+description: 提出新的使用场景、数据流程或接口改进
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 要解决的问题
+      description: 当前流程中的具体困难，以及出现频率或影响
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的行为
+      description: 你希望系统怎么做，可以和现有接口如何衔接
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+  - type: textarea
+    id: impact
+    attributes:
+      label: 影响面
+      description: 是否涉及数据来源、隐私清洗、引用溯源、评测或兼容性
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 建议中不含真实资料、客户名称或身份信息
+          required: true

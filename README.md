@@ -49,6 +49,8 @@ python -m venv .venv
 | 诊断、公开知识包与可选搜索 | [诊断指南](docs/DIAGNOSIS.md) |
 | 备份、恢复与切换数据库 | [数据库维护](docs/DATABASE_OPERATIONS.md) |
 | 记录使用问题与反馈 | [反馈](docs/PILOT.md) |
+| 报告安全问题 | [安全策略](SECURITY.md) |
+| 参与贡献 | [贡献指南](CONTRIBUTING.md) |
 | 了解代码、运行测试或贡献修改 | [架构](docs/ARCHITECTURE.md) · [开发](docs/DEVELOPMENT.md) · [测试](tests/README.md) |
 | 可选模型训练 | [训练](docs/TRAINING.md) |
 
