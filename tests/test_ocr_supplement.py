@@ -63,23 +63,15 @@ class ImageSourceTests(unittest.TestCase):
         self.assertEqual(images[0].image.size,(400,100))
 
     def test_sparse_pdf_page_is_rendered_and_dense_page_embedded_image_is_seen(self):
-        import pymupdf
-        doc=pymupdf.open()
-        sparse=doc.new_page(width=500,height=150)
-        sparse.insert_text((10,30),'180 25 60')
-        dense=doc.new_page(width=500,height=500)
-        for i in range(20):
-            dense.insert_text((10,15+i*15),'native technical context 180 25 60')
-        dense.insert_image(pymupdf.Rect(10,350,410,450),stream=png())
+        data=(Path(__file__).parent/'data'/'pdf_sparse_and_dense_pages.pdf').read_bytes()
         engine=ImageEnumerator()
-        images=list(engine.enumerate(doc.tobytes(),'pdf'))
+        images=list(engine.enumerate(data,'pdf'))
         self.assertEqual(engine.counts['pdf_pages_checked'],2)
         self.assertEqual(engine.counts['pdf_sparse_pages_rendered'],1)
         self.assertEqual(engine.counts['pdf_native_text_pages_preserved'],1)
         self.assertEqual(len(images),2)
         self.assertIn('/page:1/render',images[0].locator)
         self.assertIn('/page:2/image:1',images[1].locator)
-        doc.close()
 
     def test_multiple_tiff_pages_are_enumerated(self):
         stream=io.BytesIO()

@@ -6,6 +6,7 @@ import tempfile
 import unittest
 import threading
 import time
+import unicodedata
 from unittest.mock import patch
 import zipfile
 
@@ -102,19 +103,16 @@ class AttachmentTests(unittest.TestCase):
         self.assertIn('列2=180', text)
 
     def test_pdf_pages_and_ocr_chinese_parameters(self):
-        import pymupdf
-        from PIL import Image
-        document = pymupdf.open()
-        page = document.new_page(width=700, height=230)
-        page.insert_text((25, 80), '压合温度180℃ 压力25bar 保温60min', fontname='china-s', fontsize=26)
-        content = document.tobytes()
+        from pcb_assistant.ingestion import pdf as pdf_reader
+        content = (Path(__file__).parent / 'data' / 'pdf_chinese_text.pdf').read_bytes()
         units, _ = extract_attachment(content, 'pdf', ocr=False)
         self.assertIn('180', '\n'.join(unit.text for unit in units))
-        pixmap = page.get_pixmap(matrix=pymupdf.Matrix(2, 2), alpha=False)
-        image = Image.frombytes('RGB', (pixmap.width, pixmap.height), pixmap.samples)
+        with pdf_reader.open_document(content) as document:
+            image = document.render_page(0, 2.0)
         stream = io.BytesIO(); image.save(stream, format='PNG')
         units, stats = extract_attachment(stream.getvalue(), 'png')
-        text = '\n'.join(unit.text for unit in units)
+        # OCR output may use full-width digits depending on the renderer.
+        text = unicodedata.normalize('NFKC', '\n'.join(unit.text for unit in units))
         self.assertIn('180', text)
         self.assertIn('25', text)
         self.assertIn('60', ''.join(text.split()))

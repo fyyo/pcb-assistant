@@ -13,7 +13,7 @@ python -m pcb_assistant.ingestion.attachments <自有PST路径> --run-name attac
 python -m scripts.attachments.validate_attachments --run data/attachments_new
 ```
 
-先用小批次核对环境和输出，再处理完整来源。恢复未完成的批次才使用 `--resume`；`--no-ocr` 可只提取原生文字。支持 PDF、常见图片、Office、文本和有界压缩包成员。表格保留工作表、行列位置及静态或缓存值，不执行宏或公式；解析失败、资源上限、低置信度 OCR 和不支持格式都保留处理状态。
+先用小批次核对环境和输出，再处理完整来源。恢复未完成的批次才使用 `--resume`；`--no-ocr` 可只提取原生文字。支持 PDF、常见图片、Office、文本和有界压缩包成员。PDF 文本、页面尺寸与内嵌图片由 `pypdf` 读取，扫描页渲染由 `pypdfium2` 完成，两者均为宽松许可证。表格保留工作表、行列位置及静态或缓存值，不执行宏或公式；解析失败、资源上限、低置信度 OCR 和不支持格式都保留处理状态。
 
 附件 `documents.jsonl` 记录独立附件，`occurrences.jsonl` 记录它与父邮件的每次关联，`engineering_candidates.jsonl` 保存脱敏工程文本。附件按内容去重且父邮件关系保留；文档数、出现次数和文本单元数口径不同。
 

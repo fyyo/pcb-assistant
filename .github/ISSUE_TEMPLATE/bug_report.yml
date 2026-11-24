@@ -1,0 +1,62 @@
+name: 缺陷报告
+description: 报告功能缺陷、崩溃或行为不符
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请不要粘贴真实邮件、附件原文、客户名称、数据库内容或日志中的身份信息；用合成样例复现。
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: 发生了什么
+      description: 实际行为，以及和预期行为的差异
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      description: 命令、输入和最小环境，尽量给出可以复现的合成数据
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: 版本或提交
+      description: 分支、提交哈希或安装方式
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: 系统
+      options:
+        - Windows
+        - Linux
+        - macOS
+        - 其他
+    validations:
+      required: true
+  - type: input
+    id: python
+    attributes:
+      label: Python 版本
+      placeholder: 3.11 / 3.12
+  - type: textarea
+    id: logs
+    attributes:
+      label: 相关日志（已脱敏）
+      render: text
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: 确认
+      options:
+        - label: 我已移除真实资料与身份信息，只保留合成或脱敏内容
+          required: true
+        - label: 我已确认这不是安全问题（安全问题请用 Private vulnerability reporting）
+          required: true

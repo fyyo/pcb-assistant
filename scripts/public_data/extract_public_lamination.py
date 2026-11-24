@@ -2,7 +2,7 @@
 import json
 import hashlib
 from pathlib import Path
-import fitz
+import pypdf
 from bs4 import BeautifulSoup
 ROOT=Path(__file__).resolve().parents[2]/'data/public_lamination_v1'
 
@@ -13,9 +13,9 @@ def extract():
   path=ROOT/r['raw_path']
   assert hashlib.sha256(path.read_bytes()).hexdigest()==r['sha256']
   if path.suffix=='.pdf':
-   with fitz.open(path) as pdf:
-    r['pdf_metadata']=pdf.metadata
-    texts=[p.get_text(sort=False) for p in pdf]
+   reader=pypdf.PdfReader(str(path))
+   r['pdf_metadata']=dict(reader.metadata or {})
+   texts=[page.extract_text() or '' for page in reader.pages]
   else:
    soup=BeautifulSoup(path.read_bytes(),'html.parser')
    for e in soup(['script','style','nav','header','footer']):e.decompose()
@@ -33,7 +33,7 @@ def extract():
    'ipc_tma':'2.4.24 C, 12/94','ipc_delamination':'2.4.24.1, 12/94',
    'ipc_dsc':'2.4.25 D, 11/17',
   }.get(r['id'],'No explicit revision transcribed; see archived original and PDF metadata. PDF creation date is not publication date.')
-  r['extraction']='pymupdf_text_no_ocr' if path.suffix=='.pdf' else 'beautifulsoup_text'
+  r['extraction']='pypdf_text_no_ocr' if path.suffix=='.pdf' else 'beautifulsoup_text'
   r['empty_pages']=[i+1 for i,t in enumerate(texts) if len(t.strip())<60]
   (ROOT/'text'/(r['id']+'.txt')).write_text('\n\n'.join(f'=== PAGE {i+1} ===\n{t}' for i,t in enumerate(texts)))
   for i,t in enumerate(texts):
