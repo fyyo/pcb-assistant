@@ -47,7 +47,7 @@ pyyaml==6.0.3
 rapidocr-onnxruntime==1.4.4
 requests==2.34.2
 rich==15.0.0
-setuptools==84.0.0
+setuptools==84.1.0
 shapely==2.1.2
 shellingham==1.5.4
 six==1.17.0
