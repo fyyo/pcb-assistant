@@ -52,7 +52,7 @@ shapely==2.1.2
 shellingham==1.5.4
 six==1.17.0
 smart-open==8.0.2
-soupsieve==2.10
+soupsieve==4.0
 spacy==3.8.16
 spacy-legacy==3.0.12
 spacy-loggers==1.0.5
