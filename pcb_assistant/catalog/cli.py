@@ -6,6 +6,7 @@ from contextlib import closing
 import json
 from pathlib import Path
 import re
+import sys
 
 from pcb_assistant.catalog.common import (
     CATALOG_JSONL_EXPORTS, CatalogError, DEFAULT_CATALOG, DOCUMENT_TYPES,
@@ -599,6 +600,17 @@ def validate(directory: Path = DEFAULT_CATALOG) -> dict:
     return result
 
 
+def _missing_catalog_hint(directory):
+    """Explain how to create a catalog before the first query."""
+    return "\n".join((
+        "未找到知识库目录：" + str(directory),
+        "本仓库只提供源码，不附带邮件、附件或数据库。请先用自己的资料建立知识库，或指定已有目录：",
+        "  python -X utf8 -B knowledge_catalog.py build --output data/my_catalog",
+        "  python -X utf8 -B knowledge_catalog.py --catalog data/my_catalog status",
+        "步骤见 docs/DATA_PIPELINE.md。",
+    ))
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
@@ -751,6 +763,8 @@ def main() -> int:
     relation_parser.add_argument("--limit", type=int, default=50)
     relation_parser.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
+    if args.command != "build" and not Path(args.catalog).is_dir():
+        print(_missing_catalog_hint(args.catalog), file=sys.stderr)
     if args.command == "chat" and not args.question and (args.as_json or args.export):
         parser.error("--json and --export require a question")
     try:

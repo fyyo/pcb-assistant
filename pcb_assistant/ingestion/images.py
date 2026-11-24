@@ -135,32 +135,32 @@ class ImageEnumerator:
             elif kind in ('xls','doc','ppt'):
                 yield from self.legacy_media(data,locator)
             elif kind=='pdf':
-                import pymupdf
-                with pymupdf.open(stream=data,filetype='pdf') as document:
-                    if document.needs_pass:
-                        self.counts['encrypted_pdf']+=1
-                        return
+                from pcb_assistant.ingestion import pdf as pdf_reader
+                try:
+                    document=pdf_reader.open_document(data)
+                except pdf_reader.EncryptedPdf:
+                    self.counts['encrypted_pdf']+=1
+                    return
+                try:
                     for number in range(min(len(document),MAX_PAGES)):
-                        page=document[number]
                         self.counts['pdf_pages_checked']+=1
-                        text=page.get_text(sort=True)
+                        text=document.page_text(number)
                         if len(re.sub(r'\s','',text))<200:
                             # Render annotations, vectors and raster together.
-                            scale=min(2.,math.sqrt(19_000_000/max(1,page.rect.width*page.rect.height)))
-                            pixmap=page.get_pixmap(matrix=pymupdf.Matrix(scale,scale),colorspace=pymupdf.csRGB,alpha=False)
+                            width,height=document.page_size(number)
+                            scale=min(2.,math.sqrt(19_000_000/max(1,width*height)))
                             self.counts['pdf_sparse_pages_rendered']+=1
-                            yield ImageComponent(f'{locator}/page:{number+1}/render',Image.frombytes('RGB',(pixmap.width,pixmap.height),pixmap.samples))
+                            yield ImageComponent(f'{locator}/page:{number+1}/render',document.render_page(number,scale))
                         else:
                             self.counts['pdf_native_text_pages_preserved']+=1
-                            images=page.get_images(full=True)
-                            for image_number,image in enumerate(images[:MAX_COMPONENTS],1):
-                                try:
-                                    content=document.extract_image(image[0])
-                                    yield from self.bitmap(content['image'],f'{locator}/page:{number+1}/image:{image_number}')
-                                except Exception:
-                                    self.counts['pdf_image_decode_errors']+=1
-                            self.counts['pdf_image_count_limit']+=max(0,len(images)-MAX_COMPONENTS)
+                            payloads,decode_errors=document.page_images(number)
+                            self.counts['pdf_image_decode_errors']+=decode_errors
+                            for image_number,payload in enumerate(payloads[:MAX_COMPONENTS],1):
+                                yield from self.bitmap(payload,f'{locator}/page:{number+1}/image:{image_number}')
+                            self.counts['pdf_image_count_limit']+=max(0,len(payloads)-MAX_COMPONENTS)
                     self.counts['pdf_page_limit']+=max(0,len(document)-MAX_PAGES)
+                finally:
+                    document.close()
             elif kind=='zip':
                 with zipfile.ZipFile(io.BytesIO(data)) as archive:
                     for number,info in enumerate(archive.infolist(),1):

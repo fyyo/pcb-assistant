@@ -224,29 +224,29 @@ class Extractor:
             with Image.open(io.BytesIO(data)) as image:
                 self.image_text(image, label + '/图片')
         elif kind == 'pdf':
-            import pymupdf
-            from PIL import Image
-            with pymupdf.open(stream=data, filetype='pdf') as document:
-                if document.needs_pass:
-                    raise ExtractionError('encrypted_pdf')
-                for number in range(min(len(document), MAX_PAGES)):
-                    if self.characters >= MAX_CHARACTERS:
-                        self.stats['character_limit_reached'] += 1
-                        break
-                    page = document[number]
-                    text = page.get_text(sort=True)
-                    self.stats['pdf_pages'] += 1
-                    characters = len(re.sub(r'\s', '', text))
-                    if characters > 0:
-                        self.add(label + f'/第{number + 1}页', text)
-                    if characters < 200 and self.ocr_enabled:
-                        scale = min(2.0, math.sqrt(19000000 / max(1, page.rect.width * page.rect.height)))
-                        if scale < 2:
-                            self.stats['pdf_render_downscaled'] += 1
-                        pixmap = page.get_pixmap(matrix=pymupdf.Matrix(scale, scale), colorspace=pymupdf.csRGB, alpha=False)
-                        self.image_text(Image.frombytes('RGB', (pixmap.width, pixmap.height), pixmap.samples), label + f'/第{number + 1}页')
-                if len(document) > MAX_PAGES:
-                    self.stats['page_limit_reached'] += 1
+            from pcb_assistant.ingestion import pdf as pdf_reader
+            try:
+                with pdf_reader.open_document(data) as document:
+                    for number in range(min(len(document), MAX_PAGES)):
+                        if self.characters >= MAX_CHARACTERS:
+                            self.stats['character_limit_reached'] += 1
+                            break
+                        text = document.page_text(number)
+                        self.stats['pdf_pages'] += 1
+                        characters = len(re.sub(r'\s', '', text))
+                        if characters > 0:
+                            self.add(label + f'/第{number + 1}页', text)
+                        if characters < 200 and self.ocr_enabled:
+                            width, height = document.page_size(number)
+                            scale = min(2.0, math.sqrt(19000000 / max(1, width * height)))
+                            if scale < 2:
+                                self.stats['pdf_render_downscaled'] += 1
+                            self.image_text(document.render_page(number, scale),
+                                            label + f'/第{number + 1}页')
+                    if len(document) > MAX_PAGES:
+                        self.stats['page_limit_reached'] += 1
+            except pdf_reader.EncryptedPdf:
+                raise ExtractionError('encrypted_pdf')
         elif kind == 'docx':
             from docx import Document
             document = Document(io.BytesIO(data))

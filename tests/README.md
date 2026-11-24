@@ -1,6 +1,6 @@
 # 测试
 
-使用 Python 3.11 或 3.12。测试使用合成资料和临时 Catalog，不读取本机数据库、原始邮件或 `.private/` 记录。
+使用 Python 3.11 或 3.12。测试使用合成资料和临时 Catalog，不读取本机数据库、原始邮件或 `.private/` 记录。`tests/data/` 下只有自造的 PDF 夹具（CJK 文本页、稀疏页与带内嵌图片的正文页），用于 PDF 解析和渲染用例。
 
 ```powershell
 python -m pip install -r requirements/requirements-test.txt

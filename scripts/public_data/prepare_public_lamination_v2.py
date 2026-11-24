@@ -2,7 +2,7 @@
 import hashlib
 import json
 from pathlib import Path
-import fitz
+import pypdf
 from bs4 import BeautifulSoup
 from pcb_assistant.training.common import dump_json
 ROOT=Path(__file__).resolve().parents[2]
@@ -15,9 +15,9 @@ def extract():
   path=OUT/m['raw_path'];assert hashlib.sha256(path.read_bytes()).hexdigest()==m['sha256']
   parts=[]
   if path.suffix=='.pdf':
-   with fitz.open(path) as doc:
-    m['pdf_metadata']=doc.metadata
-    parts=[('pdf_page',str(i+1),p.get_text(sort=False)) for i,p in enumerate(doc)]
+   reader=pypdf.PdfReader(str(path))
+   m['pdf_metadata']=dict(reader.metadata or {})
+   parts=[('pdf_page',str(i+1),page.extract_text() or '') for i,page in enumerate(reader.pages)]
   elif path.suffix=='.xml':
    soup=BeautifulSoup(path.read_bytes(),'xml')
    if not soup.find('body'):raise ValueError('article_has_no_body:'+m['id'])
