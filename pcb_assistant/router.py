@@ -6,9 +6,11 @@ must never become observations about the current board.
 from __future__ import annotations
 
 from dataclasses import replace
+import os
 import re
 
 import pcb_assistant.catalog.chat as catalog_chat
+import pcb_assistant.interfaces.agent_runtime as agent_runtime
 import pcb_assistant.interfaces.gate as phase6_gate
 import pcb_assistant.interfaces.managed as phase6_managed
 from agent.gate import extract_facts
@@ -104,11 +106,20 @@ def _case_context(question, history):
     return ({"question": question, **state} if active else None), inherited
 
 
-def _annotate(outcome, route, *, context_used=False):
+def _annotate(outcome, route, *, context_used=False, agent_loop=False):
     result = dict(outcome.result)
-    result["workflow"] = {"route": route, "context_used": context_used,
-                          "routing": "local_rules_v1"}
+    workflow = {"route": route, "context_used": context_used,
+                "routing": "local_rules_v1"}
+    if agent_loop:
+        workflow["agent_loop"] = True
+    result["workflow"] = workflow
     return replace(outcome, result=catalog_chat._finalize_result(result))
+
+
+def _agent_loop_enabled(arguments, environ=None):
+    env = os.environ if environ is None else environ
+    return (arguments.get("mode") == "managed"
+            and env.get("PCB_AGENT_LOOP", "false").strip().lower() == "true")
 
 
 def answer(arguments, request_id, *, catalog_directory=None, operation_runner=None):
@@ -150,6 +161,18 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
         knowledge_args = {**arguments, "question": question}
         if not table_followup and (_RESET.search(question) or _KNOWLEDGE.search(question) or is_knowledge_question(question)):
             knowledge_args["history"] = []
+        if _agent_loop_enabled(arguments):
+            local_args = {**knowledge_args, "mode": "evidence_only"}
+            local_outcome = phase6_managed.answer(
+                local_args, request_id, catalog_directory=catalog_directory)
+            outcome = agent_runtime.run_agent(
+                knowledge_args,
+                request_id,
+                fallback_outcome=local_outcome,
+                route="knowledge",
+                catalog_directory=catalog_directory,
+            )
+            return _annotate(outcome, "knowledge", context_used=table_followup, agent_loop=True)
         return _annotate(phase6_managed.answer(
             knowledge_args, request_id, catalog_directory=catalog_directory), "knowledge", context_used=table_followup)
 
@@ -197,7 +220,17 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
     record["boundaries"]["human_confirmation_required"] = True
     record["model"].update({"status": "disabled", "mode": "evidence_only"})
     warnings = ()
-    if arguments.get("mode") == "managed":
+    if arguments.get("mode") == "managed" and not _agent_loop_enabled(arguments):
         warnings = ("缺陷诊断由本地证据流程完成，本轮未调用托管模型。",)
-    return _annotate(phase6_managed.ManagedOutcome(record, status, warnings=warnings),
-                     "diagnosis", context_used=inherited)
+    local_outcome = phase6_managed.ManagedOutcome(record, status, warnings=warnings)
+    if _agent_loop_enabled(arguments):
+        outcome = agent_runtime.run_agent(
+            {**arguments, "question": question},
+            request_id,
+            fallback_outcome=local_outcome,
+            route="diagnosis",
+            case_context=case,
+            catalog_directory=catalog_directory,
+        )
+        return _annotate(outcome, "diagnosis", context_used=inherited, agent_loop=True)
+    return _annotate(local_outcome, "diagnosis", context_used=inherited)

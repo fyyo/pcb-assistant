@@ -49,7 +49,43 @@ python -X utf8 -B -m pcb_assistant.evaluation.stdio_trial --catalog data/my_cata
 
 显式传入来源或文档类型筛选时，仍走受筛选的证据检索，不通过文档 ID 查询绕过筛选。
 
-知识问答仍支持原来的显式 `managed` 模式及服务端出境开关；缺陷诊断统一走本地证据流程，即使请求了 `managed` 也不调用托管模型，并返回提示。原 CLI 的公开知识包与 SearXNG 搜索能力继续保留；本次没有把它们接入 MCP。
+知识问答仍支持原来的显式 `managed` 模式及服务端出境开关；默认情况下缺陷诊断仍走本地证据流程，即使请求了 `managed` 也不调用托管模型。
+
+## 可选脱敏出境受控 Agent 与工具箱模式
+
+服务默认完全离线（`mode="evidence_only"`、`PCB_EGRESS_SCOPE=public_only`、`PCB_AGENT_LOOP=false`、`--toolset single`）。需要调用外部兼容 API（如 DeepSeek、通义千问、OpenAI 等）或对外暴露只读调查工具箱时，可按需显式开启：
+
+| 环境变量 / 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `PCB_ALLOW_CLOUD_EGRESS` | `false` | 服务端云端出境总开关，必须显式设为 `true` |
+| `PCB_LLM_PROVIDER` | `openai_responses` | 支持 `openai_responses`（`/v1/responses`）与 `openai_chat_completions`（`/v1/chat/completions`） |
+| `PCB_LLM_BASE_URL` | `https://api.openai.com/v1` | HTTPS 端点地址；仅当显式设 `PCB_ALLOW_LOCALHOST_HTTP=true` 时允许本机 `http://127.0.0.1` / `localhost` |
+| `PCB_LLM_MODEL` / `PCB_LLM_API_KEY_ENV` | 空 / `OPENAI_API_KEY` | 模型名称与存放密钥的环境变量名 |
+| `PCB_EGRESS_SCOPE` | `public_only` | `public_only` 仅放行公开参考资料；`sanitized_catalog` 允许经本地 spaCy NER + 敏感词二次清洗且零残留的 Catalog 有界摘录出境（受 `PCB_MAX_EVIDENCE_CHARS` 限制） |
+| `PCB_AGENT_LOOP` | `false` | 设为 `true` 且请求 `mode="managed"` 时，启用有界多步受控 Agent（知识与缺陷诊断均可用），最终结果强制过引用、数字依据与残留校验，失败自动回退本地确定性回答 |
+| `PCB_AGENT_BACKEND` | `native` | `native` 为标准库零额外依赖循环；安装 `requirements/requirements-agent.txt` 后可切换为 `pydantic_ai` |
+| `--toolset agent` | `single` | 启动 `phase6_mcp.py --toolset agent` 时开放契约登记的全部 8 个只读工具，便于接 Open WebUI（配合 `mcpo`）、Claude Desktop 或 Codex 进行多步查证 |
+
+```powershell
+# 示例：使用 Chat Completions 兼容端点运行脱敏出境受控 Agent
+$env:PCB_ALLOW_CLOUD_EGRESS = 'true'
+$env:PCB_EGRESS_SCOPE = 'sanitized_catalog'
+$env:PCB_AGENT_LOOP = 'true'
+$env:PCB_LLM_PROVIDER = 'openai_chat_completions'
+$env:PCB_LLM_BASE_URL = 'https://api.deepseek.com/v1'
+$env:PCB_LLM_MODEL = 'deepseek-chat'
+$env:PCB_LLM_API_KEY_ENV = 'DEEPSEEK_API_KEY'
+$env:DEEPSEEK_API_KEY = '<你的密钥>'
+
+.venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --catalog data/my_catalog `
+  --call pcb_answer `
+  --arguments-json '{"question":"8层板 IT-180A 压合后板边出现白斑，真空曲线正常，怎么排查？","mode":"managed"}'
+
+# 示例：面向外部 Agent 客户端开放全部 8 个只读工具
+.venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --catalog data/my_catalog --toolset agent --list-tools
+```
+
+原 CLI 的公开知识包与 SearXNG 搜索能力继续保留；本次没有把它们接入 MCP。
 
 ## 多轮上下文
 

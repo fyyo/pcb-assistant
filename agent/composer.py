@@ -60,9 +60,24 @@ def render_answer(result: dict) -> str:
         lines.append(f"{hypothesis.get('rank')}. {hypothesis.get('cause_label')}（{strength}）")
         for item in (hypothesis.get("supporting_evidence") or [])[:2]:
             lines.append(_evidence_line(item))
+        contradicting = hypothesis.get("contradicting_evidence") or []
+        if contradicting:
+            obs = "；".join(item.get("observation", "") for item in contradicting if item.get("observation"))
+            if obs:
+                lines.append(f"   已有正常观测（建议降级复核）：{obs}")
         steps = hypothesis.get("verification_steps") or []
         if steps:
             lines.append(f"   建议验证：{steps[0]}")
+
+    contradicted_notes = [
+        f"{h.get('cause_label')}（{'；'.join(c.get('observation', '') for c in h.get('contradicting_evidence') or [] if c.get('observation'))}）"
+        for h in hypotheses
+        if h.get("contradicting_evidence")
+    ]
+    if contradicted_notes:
+        lines.extend(["", "已记录的正常观测（相关候选原因已降权，仍需现场复核）："])
+        for note in contradicted_notes[:4]:
+            lines.append(f"- {note}")
 
     if status == "insufficient_evidence":
         lines.append("")

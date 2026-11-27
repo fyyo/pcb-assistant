@@ -31,6 +31,7 @@ MAX_QUERY_CHARS = 320
 MAX_EVIDENCE_PER_CAUSE = 3
 MAX_EVIDENCE_TEXT_CHARS = 600
 PRIOR_WEIGHT = 10.0
+CONTRADICTION_PENALTY = 2.5
 NUMERIC_PATTERN = re.compile(
     r"\d+(?:\.\d+)?\s*(?:°C|℃|MPa|mPa|bar|Bar|Pa|kPa|mbar|Torr|min|分钟|分鐘|小时|小時|h|秒|s|%)",
     re.IGNORECASE,
@@ -254,7 +255,8 @@ def diagnose(case, *, catalog: Path = DEFAULT_CATALOG, retriever=None,
             key: facts.get(key) for key in (
                 "stage", "location", "material", "stackup", "equipment",
                 "parameters", "batch", "timing", "product_context",
-            ) if facts.get(key) not in (None, "", {})
+                "normal_observations",
+            ) if facts.get(key) not in (None, "", {}, [])
         },
         "gate": gate,
         "hypotheses": [],
@@ -357,6 +359,11 @@ def diagnose(case, *, catalog: Path = DEFAULT_CATALOG, retriever=None,
         supporting = [_citation_item(item) for item in assertive_items]
         for item in supporting:
             citations.setdefault(item["citation_id"], item)
+        contradicting = [
+            dict(item) for item in (facts.get("normal_observations") or [])
+            if item.get("cause_id") == cause.cause_id
+        ]
+        penalty = CONTRADICTION_PENALTY if contradicting else 0.0
         hypotheses.append({
             "rank": 0,
             "cause_id": cause.cause_id,
@@ -366,11 +373,11 @@ def diagnose(case, *, catalog: Path = DEFAULT_CATALOG, retriever=None,
             "evidence_score": score["score"],
             "cause_prior": cause_prior(defect_id, cause.cause_id),
             "priority_score": round(
-                score["score"] + PRIOR_WEIGHT * cause_prior(defect_id, cause.cause_id), 3
+                max(0.0, score["score"] + PRIOR_WEIGHT * cause_prior(defect_id, cause.cause_id) - penalty), 3
             ),
             "source_count": score["source_count"],
             "supporting_evidence": supporting,
-            "contradicting_evidence": [],
+            "contradicting_evidence": contradicting,
             "verification_steps": list(cause.verification_steps),
         })
 

@@ -47,8 +47,10 @@ STAGE_TERMS = {
 }
 
 MATERIAL_PATTERN = re.compile(
-    r"(?i)(?<![a-z0-9])(?:fr-?4|it-?180|it-?150|s1000-?2|rogers|isola|panasonic|taiyo|pp)(?![a-z0-9])"
-    r"|生益|松下|罗杰斯|半固化片|prepreg|板材"
+    r"(?i)(?<![a-z0-9])(?:fr-?4|it-?180a?|it-?150|s1000-?2m?|s1170g?|s1141|sy-?1141|"
+    r"tu-?872|em-?827|em-?890|np-?155|np-?175|r-?5775|m[467]|"
+    r"rogers|isola|panasonic|taiyo|pp|106|1080|2116|3313|7628)(?![a-z0-9])"
+    r"|生益|台燿|台光|南亚|联茂|松下|罗杰斯|半固化片|prepreg|板材"
 )
 STACKUP_PATTERN = re.compile(
     r"\d+\s*层|L\d+\s*[-~至到]\s*L\d+|叠构|疊構|stack-?up", re.IGNORECASE
@@ -58,6 +60,64 @@ EQUIPMENT_PATTERN = re.compile(
 )
 BATCH_PATTERN = re.compile(r"批次|批号|批號|lot|LOT|生产日期|生產日期")
 TIMING_PATTERN = re.compile(r"压合后|壓合後|压合前|壓合前|回流后|回流後|放置|停放|烘烤后|烘烤後")
+
+_NO_ABNORMAL = r"(?:(?!(?:异常|異常|不足|偏低|偏高|超标|超標|泄漏|洩漏|失败|失敗|不良|偏大|偏小))[^，,。；;]){0,14}"
+NORMAL_OBSERVATION_RULES = (
+    (
+        "vacuum_pressure_loss",
+        re.compile(
+            r"(?:真空(?:度|曲线|曲線|系统|系統)?|抽真空|保压(?:曲线|曲線)?|压力(?:曲线|曲線)?)"
+            + _NO_ABNORMAL
+            + r"(?:正常|无异常|無異常|合格|达标|達標|稳定|穩定|良好)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "prepreg_moisture",
+        re.compile(
+            r"(?:PP|prepreg|半固化片|板材|烘烤|干燥|乾燥|含水率|挥发物|揮發物|库存|庫存)"
+            + _NO_ABNORMAL
+            + r"(?:正常|无异常|無異常|合格|未受潮|无受潮|無受潮|达标|達標)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "temperature_profile",
+        re.compile(
+            r"(?:温度曲线|溫度曲線|升温(?:速率)?|升溫(?:速率)?|保温(?:时间|時間|平台)?|保溫(?:時間|平台)?|固化(?:温度|溫度|曲线|曲線)?)"
+            + _NO_ABNORMAL
+            + r"(?:正常|无异常|無異常|合格|达标|達標|一致)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "copper_surface_contamination",
+        re.compile(
+            r"(?:铜面|銅面|棕化|黑化|表面状态|表面狀態)"
+            + _NO_ABNORMAL
+            + r"(?:正常|无异常|無異常|良好|无氧化|無氧化|无污染|無污染|清洁|清潔)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "stackup_asymmetry",
+        re.compile(
+            r"(?:叠构|疊構|铜厚分布|銅厚分布)"
+            + _NO_ABNORMAL
+            + r"(?:对称|對稱|正常|一致)",
+            re.IGNORECASE,
+        ),
+    ),
+    (
+        "material_stackup_mismatch",
+        re.compile(
+            r"(?:同批(?:材料|PP|板材)|材料批次)"
+            + _NO_ABNORMAL
+            + r"(?:正常|无异常|無異常|未变化|未變化|无变化|無變化)",
+            re.IGNORECASE,
+        ),
+    ),
+)
 
 PARAMETER_PATTERNS = {
     "temperature": re.compile(r"\d{2,3}(?:\.\d+)?\s*(?:°C|℃|度C|度|C)\b", re.IGNORECASE),
@@ -89,6 +149,25 @@ def _first_match(text: str, mapping: dict[str, tuple[str, ...]]) -> str | None:
 
 def _pattern_hits(text: str, pattern: re.Pattern) -> list[str]:
     return [match.group(0).strip() for match in pattern.finditer(text)]
+
+
+def extract_normal_observations(text: str) -> list[dict[str, str]]:
+    """Extract literal user-reported normal checks without inferring unstated facts."""
+    observations = []
+    seen = set()
+    for cause_id, pattern in NORMAL_OBSERVATION_RULES:
+        for match in pattern.finditer(text or ""):
+            phrase = " ".join(match.group(0).split()).strip()
+            key = (cause_id, phrase)
+            if not phrase or key in seen:
+                continue
+            seen.add(key)
+            observations.append({
+                "cause_id": cause_id,
+                "observation": phrase,
+                "basis": "user_reported_normal_condition",
+            })
+    return observations
 
 
 def extract_facts(case: CaseInput) -> dict[str, Any]:
@@ -125,6 +204,7 @@ def extract_facts(case: CaseInput) -> dict[str, Any]:
         "parameters": parameters,
         "batch": case.batch or (batch_hits[0] if batch_hits else None),
         "timing": case.timing or (timing_hits[0] if timing_hits else None),
+        "normal_observations": extract_normal_observations(text),
         "domain_hits": [term for term in DOMAIN_TERMS if term_present(text, term)],
         "out_of_domain_hits": [term for term in OUT_OF_DOMAIN_TERMS if term_present(text, term)],
     }

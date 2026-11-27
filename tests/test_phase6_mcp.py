@@ -279,6 +279,37 @@ class Phase6McpTests(SyntheticCatalogTestCase):
         cleaned = mcp.sanitize_payload(value)
         self.assertEqual(cleaned, {'ok': [{'nested': {}}]})
 
+    def test_agent_toolset_exposes_all_eight_read_only_tools_and_keeps_policy(self):
+        self.assertEqual([item['name'] for item in mcp.list_tools()], ['pcb_answer'])
+        with mcp._toolset_context('agent'):
+            tools = mcp.list_tools()
+            self.assertEqual(len(tools), 8)
+            names = {item['name'] for item in tools}
+            self.assertIn('pcb_search', names)
+            self.assertIn('pcb_related', names)
+            self.assertIn('pcb_validate_citations', names)
+            init = mcp.dispatch({
+                'jsonrpc': '2.0', 'id': 10, 'method': 'initialize',
+                'params': {'protocolVersion': '2025-06-18'},
+            })
+            self.assertIn('Agent toolset', init['result']['instructions'])
+            stats_resp = mcp.dispatch({
+                'jsonrpc': '2.0', 'id': 11, 'method': 'tools/call',
+                'params': {'name': 'pcb_stats', 'arguments': {}},
+            })
+            self.assertFalse(stats_resp['result']['isError'])
+            self.assertEqual(stats_resp['result']['structuredContent']['status'], 'ok')
+            blocked = mcp.dispatch({
+                'jsonrpc': '2.0', 'id': 12, 'method': 'tools/call',
+                'params': {'name': 'pcb_search', 'arguments': {'query': 'C:\\secret\\a.pst'}},
+            })
+            self.assertTrue(blocked['result']['isError'])
+            self.assertEqual(
+                blocked['result']['structuredContent']['errors'][0]['code'],
+                'policy_blocked',
+            )
+        self.assertEqual([item['name'] for item in mcp.list_tools()], ['pcb_answer'])
+
 
 if __name__ == '__main__':
     unittest.main()

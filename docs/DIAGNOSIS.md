@@ -9,7 +9,7 @@ python -m agent.cli evaluate --cases cases/agent_eval_smoke.jsonl --validate-onl
 python -m agent.cli evaluate --cases cases/agent_eval_smoke.jsonl --catalog data/my_catalog --check-determinism --output .private/evaluation.json
 ```
 
-结构化病例可提供材料、叠构、位置、设备与工艺条件；缺少具体现象时先追问。`evaluate` 可以不提供专家 `expected` 标签，仍检查执行状态、引用完整性、候选分布、耗时与重复运行指纹；无独立标签时准确率保持 `n/a`。长任务可加 `--background`，再用 `agent.cli jobs list/status/result/stop` 管理。真实问题和回答保留在本机私有目录。
+结构化病例可提供材料、叠构、位置、设备与工艺条件；缺少具体现象时先追问。当用户在描述中明确说明某些项已核查正常（例如“真空曲线和保压正常”“PP 烘烤正常”“铜面棕化正常”）时，诊断流程会将该字面观测记录到对应候选原因的 `contradicting_evidence` 并施加有界降权，同时保留该假设供现场复核。`evaluate` 可以不提供专家 `expected` 标签，仍检查执行状态、引用完整性、候选分布、耗时与重复运行指纹；无独立标签时准确率保持 `n/a`。长任务可加 `--background`，再用 `agent.cli jobs list/status/result/stop` 管理。真实问题和回答保留在本机私有目录。
 
 `cases/white_spot_001.json` 保留一个结构化输入示例；各类缺陷评测集中在 `cases/agent_eval_smoke.jsonl`，无需为每类现象单独维护重复的 JSON 示例。`cases/internal_pilot.json` 是可选试用复核工具的合成默认输入。
 

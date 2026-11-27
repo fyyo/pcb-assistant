@@ -435,6 +435,59 @@ class LaminationAgentTests(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(json.loads(buffer.getvalue()), payload)
 
+    def test_expanded_material_grades_and_normal_observations(self):
+        for grade in ("IT-180A", "TU-872", "EM-827", "S1000-2M", "7628"):
+            with self.subTest(grade=grade):
+                facts = extract_facts(CaseInput.from_mapping({
+                    "question": f"8层板 {grade} 压合后板边出现白斑。"
+                }))
+                self.assertEqual(facts["material"].upper(), grade.upper())
+        # Must not treat abnormal vacuum followed by normal temperature as normal vacuum.
+        mixed = extract_facts(CaseInput.from_mapping({
+            "question": "压合后板边白斑，真空不足，温度曲线正常。"
+        }))
+        causes = {item["cause_id"] for item in mixed["normal_observations"]}
+        self.assertNotIn("vacuum_pressure_loss", causes)
+        self.assertIn("temperature_profile", causes)
+
+    def test_contradicting_evidence_damps_normal_cause_and_renders(self):
+        fake = FakeRetriever((
+            ("真空", [evidence_item("EXC_vac", "真空不足会导致压合白斑。")]),
+            ("受潮", [evidence_item("EXC_moist", "PP 受潮会导致压合白斑。")]),
+        ))
+        result = diagnose(
+            {"question": "压合后板边出现白斑，真空曲线和保压正常，怎么排查？"},
+            retriever=fake,
+        )
+        by_cause = {h["cause_id"]: h for h in result["hypotheses"]}
+        vac = by_cause["vacuum_pressure_loss"]
+        moist = by_cause["prepreg_moisture"]
+        self.assertTrue(vac["contradicting_evidence"])
+        self.assertEqual(vac["contradicting_evidence"][0]["basis"], "user_reported_normal_condition")
+        self.assertLess(vac["priority_score"], moist["priority_score"])
+        self.assertGreater(vac["rank"], moist["rank"])
+        self.assertIn("已记录的正常观测", result["answer"])
+        self.assertEqual(result["result_fingerprint"], fingerprint_result(result))
+
+    def test_related_attachment_excerpts_traces_mail_relationships(self):
+        from agent.retriever import CatalogRetriever, related_attachment_excerpts
+        from tests.phase6_test_fixtures import MAIL_ID, SyntheticCatalogTestCase
+
+        class _TempHolder(SyntheticCatalogTestCase):
+            pass
+
+        _TempHolder.setUpClass()
+        try:
+            traced = related_attachment_excerpts(_TempHolder.catalog, [MAIL_ID], query="白斑")
+            self.assertTrue(traced)
+            self.assertTrue(all(item["citation_id"].startswith("EXC_") for item in traced))
+            retriever = CatalogRetriever(
+                _TempHolder.catalog, limit=3, include_related_attachments=True)
+            results = retriever.search("白斑")
+            self.assertTrue(results)
+        finally:
+            _TempHolder.doClassCleanups()
+
 
 if __name__ == "__main__":
     unittest.main()

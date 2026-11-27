@@ -1,0 +1,3 @@
+# Optional PydanticAI orchestration backend for PCB_AGENT_BACKEND=pydantic_ai.
+# Core retrieval, MCP, and the built-in native bounded Agent loop do not require this file.
+pydantic-ai-slim[openai]>=0.1,<2

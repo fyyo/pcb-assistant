@@ -8,6 +8,7 @@
 | `requirements.txt` | 本机邮件与 PST 清洗 |
 | `requirements-attachments.txt` | 附件解析和 CPU OCR |
 | `requirements-test.txt` | 完整合成测试，包含附件与 OCR 依赖 |
+| `requirements-agent.txt` | 可选 `PydanticAI` 受控 Agent 编排后端（默认 `native` 后端不依赖） |
 | `requirements-training.txt` | 可选本地模型训练；PyTorch/CUDA 需匹配机器 |
 | `requirements.lock.txt`、其他 `*.lock.txt` | 对应本机处理环境的版本记录 |
 

@@ -304,6 +304,12 @@ class Phase6ManagedTests(SyntheticManagedCatalogTestCase):
             }])
         self.assertEqual(caught.exception.code, 'invalid_schema')
 
+        # Affirmative root-cause certainty is rejected; negated safety disclaimers are allowed.
+        self.assertTrue(managed._has_unsupported_certainty('本次问题的根因已确认。'))
+        self.assertTrue(managed._has_unsupported_certainty('The confirmed root cause is moisture.'))
+        self.assertFalse(managed._has_unsupported_certainty('严禁据此判定根因已确认，结论仅为候选方向。'))
+        self.assertFalse(managed._has_unsupported_certainty('Cannot treat this as a confirmed root cause.'))
+
     def test_provider_builds_responses_schema_request_without_exposing_body_in_errors(self):
         config = managed.provider_config(ENV)
         captured = {}
@@ -394,6 +400,70 @@ class Phase6ManagedTests(SyntheticManagedCatalogTestCase):
         self.assertFalse(limiter.allow(now + 2))
         self.assertTrue(limiter.allow(now + 62))
         self.assertFalse(limiter.allow(now + 63))
+
+    def test_chat_completions_provider_builds_request_and_normalizes_usage(self):
+        chat_env = {
+            **ENV,
+            'PCB_LLM_PROVIDER': 'openai_chat_completions',
+            'PCB_LLM_BASE_URL': 'https://api.deepseek.com/v1',
+            'PCB_LLM_MODEL': 'deepseek-chat',
+        }
+        config = managed.provider_config(chat_env)
+        self.assertIsNotNone(config)
+        self.assertEqual(config.provider, 'openai_chat_completions')
+        captured = {}
+
+        def opener(request, timeout):
+            captured['url'] = request.full_url
+            captured['auth'] = request.get_header('Authorization')
+            captured['body'] = json.loads(request.data.decode('utf-8'))
+            payload = json.dumps({
+                'status': 'answered', 'assessment': 'hypothesis',
+                'summary': '依据资料',
+                'summary_citation_ids': [EXCERPT_ID],
+                'possible_causes': [], 'checks': [],
+                'missing_information': [], 'limitations': [],
+            }, ensure_ascii=False)
+            return FakeResponse({
+                'choices': [{'message': {'role': 'assistant', 'content': '```json\n' + payload + '\n```'},
+                             'finish_reason': 'stop'}],
+                'usage': {'prompt_tokens': 11, 'completion_tokens': 7, 'total_tokens': 18},
+            })
+
+        provider = managed.create_provider(config, opener=opener)
+        self.assertIsInstance(provider, managed.OpenAIChatCompletionsProvider)
+        response = provider.answer({'question': '白斑', 'history': [], 'evidence': []})
+        self.assertEqual(captured['url'], 'https://api.deepseek.com/v1/chat/completions')
+        self.assertEqual(captured['auth'], 'Bearer ' + ENV['OPENAI_API_KEY'])
+        self.assertEqual(captured['body']['response_format'], {'type': 'json_object'})
+        self.assertEqual(response['usage'], {'input_tokens': 11, 'output_tokens': 7, 'total_tokens': 18})
+
+    def test_sanitized_catalog_scope_opt_in_and_invalid_scope_rejection(self):
+        guard = managed.EgressGuard(scope='sanitized_catalog')
+        scrubbed = guard.scrub_citations([{
+            'excerpt_id': EXCERPT_ID,
+            'source_type': 'mail',
+            'type': 'MAIL',
+            'title': '联系人 test@example.com 邮件',
+            'text': '白斑记录由测试小甲核对，温度 180℃。',
+        }])
+        self.assertEqual(len(scrubbed), 1)
+        self.assertNotIn('test@example.com', scrubbed[0]['title'])
+        self.assertNotIn('测试小甲', scrubbed[0]['text'])
+        self.assertIn('180°C', scrubbed[0]['text'])
+
+        with redirect_stderr(StringIO()):
+            outcome = _run_answer(env={**ENV, 'PCB_EGRESS_SCOPE': 'invalid_scope'})
+        self.assertEqual(outcome.status, 'fallback')
+        self.assertEqual(outcome.result['model']['fallback_reason'], 'policy_blocked')
+        self.assertFalse(outcome.external_services)
+
+    def test_localhost_http_base_url_requires_explicit_opt_in(self):
+        base = {**ENV, 'PCB_LLM_BASE_URL': 'http://127.0.0.1:8000/v1'}
+        self.assertIsNone(managed.provider_config(base))
+        allowed = managed.provider_config({**base, 'PCB_ALLOW_LOCALHOST_HTTP': 'true'})
+        self.assertIsNotNone(allowed)
+        self.assertEqual(allowed.base_url, 'http://127.0.0.1:8000/v1')
 
 
 if __name__ == '__main__':
