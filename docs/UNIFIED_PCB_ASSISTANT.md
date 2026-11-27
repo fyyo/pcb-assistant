@@ -85,6 +85,38 @@ $env:DEEPSEEK_API_KEY = '<你的密钥>'
 .venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --catalog data/my_catalog --toolset agent --list-tools
 ```
 
+## 多轮排查工作台与本地配置（`workbench`）
+
+不想每次手动设置 8 个环境变量时，可将本机私有配置写入被 `.gitignore` 忽略的 `.private/agent_profile.json`（环境变量始终优先覆盖该文件，**禁止提交至版本库**）：
+
+```json
+{
+  "PCB_ALLOW_CLOUD_EGRESS": true,
+  "PCB_EGRESS_SCOPE": "sanitized_catalog",
+  "PCB_AGENT_LOOP": true,
+  "PCB_LLM_PROVIDER": "openai_chat_completions",
+  "PCB_LLM_BASE_URL": "https://api.deepseek.com/v1",
+  "PCB_LLM_MODEL": "deepseek-chat",
+  "PCB_LLM_API_KEY_ENV": "DEEPSEEK_API_KEY",
+  "api_key": "<仅保存在本机 .private/ 中>"
+}
+```
+
+启动交互式多轮排查工作台或生成 MCP / Open WebUI（`mcpo`）接入配置：
+
+```powershell
+# 启动交互式多轮工作台，并将排查记录持久化到 .private/cases/WS_20261127.json
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog workbench --case WS_20261127
+
+# 单次问答（自动读取 .private/agent_profile.json，无配置则安全回退本地证据回答）
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog workbench "8层板 IT-180A 压合后板边出现白斑，真空曲线正常，怎么排查？"
+
+# 输出不含密钥的 Claude / Codex / Open WebUI (mcpo) 接入配置片段
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog workbench --mcp-config --toolset agent
+```
+
+工作台支持 `/mode agent|local`、`/case new|open|list|show|close`、`/note <现场记录>`、`/report <路径.md>`（导出 Markdown 排查草稿）、`/sources` 与 `/trace`。
+
 原 CLI 的公开知识包与 SearXNG 搜索能力继续保留；本次没有把它们接入 MCP。
 
 ## 多轮上下文

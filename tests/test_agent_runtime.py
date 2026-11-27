@@ -111,7 +111,8 @@ class AgentRuntimeTests(SyntheticManagedCatalogTestCase):
             }
 
         def step3(messages, _tools):
-            tool_payload = json.loads(messages[-1]["content"])
+            tool_msg = next(m for m in reversed(messages) if m["role"] == "tool")
+            tool_payload = json.loads(tool_msg["content"])
             citation = tool_payload["excerpts"][0]["excerpt_id"]
             return {
                 "message": {"role": "assistant", "content": _structured_json(citation)},
@@ -370,6 +371,50 @@ class AgentRuntimeTests(SyntheticManagedCatalogTestCase):
         pub_result = toolbox.search_evidence("白斑", source="mail")
         self.assertTrue(all(item["source_type"] == "public_reference"
                             for item in pub_result["excerpts"]))
+
+    def test_two_hop_related_attachment_from_case_doc_id(self):
+        from pcb_assistant.catalog.common import stable_id
+
+        case_id = stable_id("CASE", "mail_a")
+        guard = managed.EgressGuard(scope="sanitized_catalog")
+        toolbox = agent_runtime.AgentToolbox(self.catalog, guard)
+        traced = toolbox.get_related_attachments(case_id, query="白斑")
+        self.assertEqual(traced["status"], "ok")
+        self.assertTrue(traced["excerpts"])
+        self.assertTrue(all(item["excerpt_id"].startswith("EXC_") for item in traced["excerpts"]))
+
+    def test_precomputed_diagnosis_cache_and_duplicate_tool_dedup(self):
+        guard = managed.EgressGuard(scope="sanitized_catalog")
+        precomputed = {
+            "status": "diagnosed",
+            "defect": "white_spot",
+            "defect_label": "白斑/白点",
+            "hypotheses": [],
+            "missing_information": [],
+            "citations": [{
+                "citation_id": "EXC_" + "a" * 24,
+                "title": "合成缓存证据",
+                "source_type": "case",
+                "type": "CASE",
+                "text": "PP 受潮会导致白斑。",
+                "evidence_status": "synthetic",
+                "independently_verified": False,
+            }],
+        }
+        toolbox = agent_runtime.AgentToolbox(
+            self.catalog,
+            guard,
+            precomputed_diagnosis=precomputed,
+            precomputed_question="压合后板边出现白斑",
+        )
+        with mock.patch.object(agent_runtime, "diagnose", side_effect=AssertionError("should reuse cache")):
+            first = toolbox.dispatch("inspect_diagnosis", {"question": "压合后板边出现白斑"})
+        self.assertTrue(first["cached"])
+        self.assertEqual(first["added"], 1)
+
+        second = toolbox.dispatch("inspect_diagnosis", {"question": "压合后板边出现白斑"})
+        self.assertEqual(second["status"], "duplicate_skipped")
+        self.assertEqual(toolbox.trace[-1]["status"], "duplicate_skipped")
 
 
 if __name__ == "__main__":

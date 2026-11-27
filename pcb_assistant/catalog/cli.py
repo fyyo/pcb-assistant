@@ -746,6 +746,20 @@ def main() -> int:
                              help="Write the chat response to a new local JSON file")
     chat_parser.add_argument("--overwrite", action="store_true",
                              help="Replace an existing exported JSON file")
+    workbench_parser = commands.add_parser(
+        "workbench", help="Interactive multi-turn Agent workbench with persistent local cases")
+    workbench_parser.add_argument("question", nargs="?", default="")
+    workbench_parser.add_argument("--mode", choices=("agent", "local"), default="agent")
+    workbench_parser.add_argument("--case", dest="case_id",
+                                  help="Open or create a persistent case under .private/cases/")
+    workbench_parser.add_argument("--cases-dir", type=Path)
+    workbench_parser.add_argument("--agent-config", type=Path,
+                                  help="Optional local profile JSON (default: .private/agent_profile.json)")
+    workbench_parser.add_argument("--json", action="store_true", dest="as_json",
+                                  help="Print one-shot JSON output")
+    workbench_parser.add_argument("--mcp-config", action="store_true",
+                                  help="Print MCP client and Open WebUI (mcpo) configuration snippets")
+    workbench_parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
     search_parser = commands.add_parser("search")
     search_parser.add_argument("query", nargs="?", default="")
     search_parser.add_argument("--type", choices=DOCUMENT_TYPES)
@@ -880,6 +894,26 @@ def main() -> int:
             else:
                 chat_argv.append("chat")
             return chat_main(chat_argv)
+        elif args.command == "workbench":
+            from pcb_assistant.interfaces.workbench import main as workbench_main
+            wb_argv = [
+                "--catalog", str(args.catalog),
+                "--mode", args.mode,
+                "--toolset", args.toolset,
+            ]
+            if args.case_id:
+                wb_argv.extend(["--case", args.case_id])
+            if args.cases_dir:
+                wb_argv.extend(["--cases-dir", str(args.cases_dir)])
+            if args.agent_config:
+                wb_argv.extend(["--agent-config", str(args.agent_config)])
+            if args.as_json:
+                wb_argv.append("--json")
+            if args.mcp_config:
+                wb_argv.append("--mcp-config")
+            if args.question:
+                wb_argv.append(args.question)
+            return workbench_main(wb_argv)
         elif args.command == "search":
             result = search(args.catalog, args.query, doc_type=args.type, source_type=args.source,
                             tags=args.tag, limit=args.limit, offset=args.offset, deduplicate=not args.include_duplicates,

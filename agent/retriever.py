@@ -129,6 +129,25 @@ def _excerpt_id(content_id: str, start: int, end: int, excerpt_text: str) -> str
     return "EXC_" + hashlib.sha256(identity.encode("utf-8")).hexdigest()[:24]
 
 
+def _linked_ids(connection, doc_id: str, relations: tuple[str, ...], limit: int = 30) -> list[str]:
+    placeholders = ",".join("?" for _ in relations)
+    rows = connection.execute(
+        f"""
+        SELECT from_id, to_id FROM relationships
+        WHERE (from_id = ? OR to_id = ?) AND relation IN ({placeholders})
+        ORDER BY relationship_id
+        LIMIT ?
+        """,
+        (doc_id, doc_id, *relations, limit),
+    ).fetchall()
+    linked = []
+    for row in rows:
+        other = row["to_id"] if row["from_id"] == doc_id else row["from_id"]
+        if other and other != doc_id and other not in linked:
+            linked.append(other)
+    return linked
+
+
 def related_attachment_excerpts(
     directory: Path,
     doc_ids: list[str] | tuple[str, ...],
@@ -137,7 +156,11 @@ def related_attachment_excerpts(
     limit_per_doc: int = 2,
     max_chars: int = MAX_EXCERPT_CHARS,
 ) -> list[dict]:
-    """Trace ATTACHED_TO / EXTRACTED_FROM relationships to collect citable attachment excerpts."""
+    """Trace multi-hop relationships (CASE/KNOWLEDGE -> MAIL -> ATTACHMENT -> KNOWLEDGE).
+
+    Resolves both direct mail attachments and 2-hop attachments linked via a
+    CASE's DERIVED_FROM parent MAIL record, returning citable literal slices.
+    """
     clean_ids = [doc_id for doc_id in dict.fromkeys(doc_ids or ()) if isinstance(doc_id, str) and doc_id]
     if not clean_ids:
         return []
@@ -145,41 +168,55 @@ def related_attachment_excerpts(
     seen_excerpts = set()
     with closing(connect_readonly(directory)) as connection:
         for seed_id in clean_ids:
-            attachment_ids = []
+            mail_ids: list[str] = []
+            case_ids: list[str] = []
+            attachment_ids: list[str] = []
+            direct_knowledge_ids: list[str] = []
+
             if seed_id.startswith("ATTACHMENT_"):
                 attachment_ids.append(seed_id)
+            elif seed_id.startswith("MAIL_"):
+                mail_ids.append(seed_id)
+            elif seed_id.startswith("CASE_"):
+                case_ids.append(seed_id)
             else:
-                rows = connection.execute(
-                    """
-                    SELECT from_id, to_id, relation FROM relationships
-                    WHERE (from_id = ? OR to_id = ?) AND relation IN ('ATTACHED_TO', 'EXTRACTED_FROM')
-                    ORDER BY relationship_id
-                    LIMIT 40
-                    """,
-                    (seed_id, seed_id),
-                ).fetchall()
-                for row in rows:
-                    other = row["to_id"] if row["from_id"] == seed_id else row["from_id"]
-                    if other and other not in attachment_ids:
+                # KNOWLEDGE_ or PUBLIC_: check parent CASE_ / ATTACHMENT_ / MAIL_
+                for other in _linked_ids(connection, seed_id, ("EXTRACTED_FROM", "DERIVED_FROM", "ATTACHED_TO"), limit=20):
+                    if other.startswith("ATTACHMENT_") and other not in attachment_ids:
                         attachment_ids.append(other)
-            candidate_doc_ids = []
-            for att_id in attachment_ids:
-                if att_id not in candidate_doc_ids:
+                    elif other.startswith("MAIL_") and other not in mail_ids:
+                        mail_ids.append(other)
+                    elif other.startswith("CASE_") and other not in case_ids:
+                        case_ids.append(other)
+
+            # Hop 1: CASE_ -> DERIVED_FROM -> MAIL_ (and any direct attachment links)
+            for case_id in case_ids[:5]:
+                for other in _linked_ids(connection, case_id, ("DERIVED_FROM", "ATTACHED_TO"), limit=20):
+                    if other.startswith("MAIL_") and other not in mail_ids:
+                        mail_ids.append(other)
+                    elif other.startswith("ATTACHMENT_") and other not in attachment_ids:
+                        attachment_ids.append(other)
+
+            # Hop 2: MAIL_ -> ATTACHED_TO -> ATTACHMENT_
+            for mail_id in mail_ids[:5]:
+                for other in _linked_ids(connection, mail_id, ("ATTACHED_TO", "EXTRACTED_FROM"), limit=30):
+                    if other.startswith("ATTACHMENT_") and other not in attachment_ids:
+                        attachment_ids.append(other)
+                    elif other.startswith("KNOWLEDGE_") and other != seed_id and other not in direct_knowledge_ids:
+                        direct_knowledge_ids.append(other)
+
+            # Hop 3: ATTACHMENT_ -> EXTRACTED_FROM -> readable KNOWLEDGE_
+            candidate_doc_ids: list[str] = []
+            for att_id in attachment_ids[:20]:
+                if att_id != seed_id and att_id not in candidate_doc_ids:
                     candidate_doc_ids.append(att_id)
-                if att_id.startswith("ATTACHMENT_"):
-                    sub_rows = connection.execute(
-                        """
-                        SELECT from_id, to_id FROM relationships
-                        WHERE (from_id = ? OR to_id = ?) AND relation = 'EXTRACTED_FROM'
-                        ORDER BY relationship_id
-                        LIMIT 20
-                        """,
-                        (att_id, att_id),
-                    ).fetchall()
-                    for sub in sub_rows:
-                        other = sub["to_id"] if sub["from_id"] == att_id else sub["from_id"]
-                        if other and other not in candidate_doc_ids:
-                            candidate_doc_ids.append(other)
+                for other in _linked_ids(connection, att_id, ("EXTRACTED_FROM",), limit=20):
+                    if other != seed_id and other not in candidate_doc_ids:
+                        candidate_doc_ids.append(other)
+            for kid in direct_knowledge_ids[:10]:
+                if kid != seed_id and kid not in candidate_doc_ids:
+                    candidate_doc_ids.append(kid)
+
             added = 0
             for target_id in candidate_doc_ids:
                 if added >= limit_per_doc:
@@ -291,7 +328,7 @@ class CatalogRetriever:
         if self.include_related_attachments and items:
             seed_docs = [
                 item["doc_id"] for item in items[:3]
-                if item.get("doc_id") and item.get("doc_type") in ("MAIL", "ATTACHMENT")
+                if item.get("doc_id") and item.get("doc_type") in ("MAIL", "ATTACHMENT", "CASE")
             ]
             if seed_docs:
                 seen_ids = {item["citation_id"] for item in items}
