@@ -117,6 +117,19 @@ $env:DEEPSEEK_API_KEY = '<你的密钥>'
 
 工作台支持 `/mode agent|local`、`/case new|open|list|show|close`、`/note <现场记录>`、`/report <路径.md>`（导出 Markdown 排查草稿）、`/sources` 与 `/trace`。
 
+## 本机 Web 工作台与 HTTP/MCP 服务（双击即用）
+
+Windows 下可直接双击根目录的 `start_workbench.bat`，或通过命令启动零依赖本机 Web 工作台（默认仅监听 `127.0.0.1:8765`）：
+
+```powershell
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog web --open
+```
+
+该服务同时提供：
+- `GET /`：浏览器交互式多轮排查工作台（支持在弹窗中保存 `.private/agent_profile.json`、点击 `EXC_...` 展开原文出处、管理病例备注与下载 Markdown 排查草稿）；
+- `POST /api/answer`：标准 JSON 问答/诊断接口；
+- `POST /mcp`：标准 MCP Streamable HTTP 端点（默认 `--toolset agent`），可直接供 Dify、MaxKB、FastGPT、Open WebUI 或企业微信/钉钉/飞书数字员工桥接调用。非本机地址监听必须提供 `--api-token`（或 `PCB_WEB_API_TOKEN`）Bearer 鉴权。
+
 原 CLI 的公开知识包与 SearXNG 搜索能力继续保留；本次没有把它们接入 MCP。
 
 ## 多轮上下文

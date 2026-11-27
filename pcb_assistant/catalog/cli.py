@@ -760,6 +760,16 @@ def main() -> int:
     workbench_parser.add_argument("--mcp-config", action="store_true",
                                   help="Print MCP client and Open WebUI (mcpo) configuration snippets")
     workbench_parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
+    web_parser = commands.add_parser(
+        "web", help="Launch local Web workbench UI, REST API, and /mcp HTTP endpoint")
+    web_parser.add_argument("--host", default="127.0.0.1")
+    web_parser.add_argument("--port", type=int, default=8765)
+    web_parser.add_argument("--cases-dir", type=Path)
+    web_parser.add_argument("--agent-config", type=Path)
+    web_parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
+    web_parser.add_argument("--api-token", default=None)
+    web_parser.add_argument("--open", action="store_true", dest="open_browser",
+                            help="Open the workbench in the default browser")
     search_parser = commands.add_parser("search")
     search_parser.add_argument("query", nargs="?", default="")
     search_parser.add_argument("--type", choices=DOCUMENT_TYPES)
@@ -914,6 +924,23 @@ def main() -> int:
             if args.question:
                 wb_argv.append(args.question)
             return workbench_main(wb_argv)
+        elif args.command == "web":
+            from pcb_assistant.interfaces.web_workbench import main as web_main
+            web_argv = [
+                "--catalog", str(args.catalog),
+                "--host", args.host,
+                "--port", str(args.port),
+                "--toolset", args.toolset,
+            ]
+            if args.cases_dir:
+                web_argv.extend(["--cases-dir", str(args.cases_dir)])
+            if args.agent_config:
+                web_argv.extend(["--agent-config", str(args.agent_config)])
+            if args.api_token:
+                web_argv.extend(["--api-token", args.api_token])
+            if args.open_browser:
+                web_argv.append("--open")
+            return web_main(web_argv)
         elif args.command == "search":
             result = search(args.catalog, args.query, doc_type=args.type, source_type=args.source,
                             tags=args.tag, limit=args.limit, offset=args.offset, deduplicate=not args.include_duplicates,
