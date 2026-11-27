@@ -17,13 +17,14 @@
 
 | 能力 | 说明 | 可以这样问 |
 | --- | --- | --- |
-| 缺陷排查 | 围绕白斑、分层、缺胶、空洞、翘曲，整理可能原因、检查方向和待补信息 | 压合后板边出现白斑，先核对什么？ |
+| 缺陷排查 | 围绕白斑、分层、缺胶、空洞、翘曲，整理候选原因、正常观测排除项、检查方向和待补信息 | 8层板 IT-180A 压合后板边出现白斑，真空曲线正常，怎么排查？ |
 | 材料与叠构查询 | 查 PP、树脂含量、介厚等；按工作表、行列、区块定位原文；支持连续追问 | 这份叠构表右侧第 12 行的介厚有没有单位？ |
 | 材料术语解释 | Tg／Td／RF／GT 等别名解析、定义与适用条件，缺条件时单独列出未核实的子问题 | Tg 和 Td 在这份材料表里分别指什么？ |
-| 回答溯源 | 每段结论给出源摘录与引用；材料、单位、版本对不上时标明证据缺口 | — |
+| 多步受控 Agent | 可选经本地脱敏网关调用兼容 API，沿两跳关系链自动追查关联附件并强制核验引用与数字依据 | — |
+| 本机 Web 工作台 | 零新增依赖网页工作台（持久化病例、点击 `EXC_` 看原文、导出 Markdown 排查草稿） | — |
 | 资料整理 | 本机邮件脱敏、附件解析、CPU OCR、增量入库、备份与恢复 | — |
 
-支持命令行单次问答、连续对话，也可以通过 MCP 接进 Agent，用同一套检索与诊断逻辑。
+支持浏览器本机工作台、命令行单次问答与连续对话，也可以通过 stdio 或 Streamable HTTP MCP 接进外部 Agent 与数字员工平台。
 
 ## 快速开始
 
@@ -35,59 +36,63 @@ cd pcb-assistant
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements/requirements-core.txt
 
-# 把 data/my_catalog 换成你自己的知识库目录
+# 方式一：Windows 直接双击 start_workbench.bat，或用命令打开本机 Web 工作台 (http://127.0.0.1:8765/)
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog web --open
+
+# 方式二：命令行确定性问答（--model off 不依赖任何模型权重）
 .venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog chat "压合后板边出现白斑，先核对什么？" --model off
 ```
 
-`--model off` 使用确定性的证据回退，不依赖模型权重，适合先验证链路是否通。
-
 还没有知识库？从自己的资料建一个，步骤见[资料处理](docs/DATA_PIPELINE.md)。**本仓库只提供源码，不含邮件、附件、数据库或模型。**
 
-## 接入 Agent
+## 接入 Agent 与数字员工
 
-任何支持本地 stdio MCP 的客户端都可以启动这个服务，注册后调用唯一工具 `pcb_answer`：
+任何支持本地 stdio MCP 的客户端都可以启动这个服务（默认仅暴露唯一入口 `pcb_answer`，也可加 `--toolset agent` 开放全部 8 个只读工具）：
 
 ```powershell
 .venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --catalog data/my_catalog
+.venv\Scripts\python.exe -X utf8 -B phase6_mcp.py --catalog data/my_catalog --toolset agent
 ```
 
-问题、补充信息和最近几轮对话都走同一个入口，内部自动完成检索、诊断或必要的追问，返回回答、引用和待补信息。客户端配置、多轮历史和返回结构见 [MCP 接入](docs/UNIFIED_PCB_ASSISTANT.md)；只支持远程 HTTP 的平台需要另加网关。
+需要接入只支持 HTTP 的平台（如 Dify、MaxKB、FastGPT、Open WebUI 或企业 IM 数字员工）时，`knowledge_catalog.py ... web` 同时在本机暴露 `POST /mcp`（MCP Streamable HTTP）与 `POST /api/answer`。配置、脱敏出境开关、多轮历史与返回结构见 [MCP 与工作台指南](docs/UNIFIED_PCB_ASSISTANT.md)。
 
-默认只读本地资料，公开搜索和托管模型需要显式配置。
+默认只读本地资料，外部兼容 API 与公开搜索均需显式开启并通过本地脱敏与残留检查。
 
 ## 设计要点
 
-- **单入口**：对外只暴露 `pcb_answer`，调用方不需要先判断该走知识查询还是缺陷诊断。
-- **只读查询**：普通查询使用只读连接，来源正文视为不可信数据，不能改配置或触发指令。
-- **本地优先**：默认无外部请求；外发能力是显式开关，且有边界检查。
-- **可评测**：150 条合成用例，配合引用完整性、敏感外发、提示注入三类门禁；CI 在 Windows／Linux × Python 3.11／3.12 上运行。
+- **统一契约与工具箱**：默认单入口 `pcb_answer` 自动分流检索、诊断与追问；高级 Agent 宿主可显式启用 8 个只读工具集。
+- **只读与不可信隔离**：普通查询强制使用 SQLite 只读连接；来源正文视为不可信数据，不能改配置或触发指令。
+- **本地优先与脱敏出境**：默认零外部请求；显式开启外部 API 时，所有出境摘录经本地 NER + 敏感词二次脱敏且零残留，返回结果强制校验 `EXC_` 引用白名单与数字依据，任一失败自动回退本地确定性回答。
+- **可评测**：150 条合成评测骨架配合引用完整性、敏感外发、提示注入三类门禁；CI 在 Windows／Linux × Python 3.11／3.12 上运行。
 
 ## 边界
 
 回答用于资料查询与排查辅助。来源讨论、OCR 数字和候选原因需要进一步核对，**不能作为已批准的生产参数**。
 
-本地评测尚未建立专家 gold，因此不对外声明准确率或发布就绪结论；[评测报告](docs/PHASE6_3_LOCAL_EVAL_20261123.json)按原样保留其未达项。遇到资料缺失、单位不明或版本不一致时，系统会列证据缺口而不是给结论。
+本地评测尚未建立专家 gold，因此不对外声明准确率或发布就绪结论（可通过 `python -m pcb_assistant.evaluation.quality` 与 `pcb_assistant.evaluation.release` 在本机核查）。遇到资料缺失、单位不明或版本不一致时，系统会列证据缺口而不是给结论。
 
 ## 目录结构
 
-```
-pcb_assistant/   catalog（构建、检索、证据、对话）、ingestion、privacy、interfaces、evaluation、training
-agent/           压合诊断：病例事实、候选原因、本地证据
-scripts/         数据处理、核验与人工复核工具
+```text
+pcb_assistant/   catalog（构建、检索、证据、对话）、ingestion、privacy、interfaces（MCP、脱敏网关、受控 Agent、Web 工作台）、evaluation、training
+agent/           压合诊断：病例事实、正常观测排除、多跳附件追踪、候选原因评分与评测任务
+scripts/         数据处理、备份交付核验与人工复核工具
 contracts/       接口 schema、工具映射与合成评测骨架
 config/          运行配置；可选训练配置在 config/training/
+cases/           合成诊断与试用输入样例
 docs/            使用与设计文档
 tests/           合成测试与 PDF 夹具
 ```
 
-根目录的 `knowledge_catalog.py` 和 `phase6_mcp.py` 是两个薄启动入口，实现分别在 `pcb_assistant.catalog.cli` 与 `pcb_assistant.interfaces.mcp`。更多分层说明见[架构](docs/ARCHITECTURE.md)。
+根目录仅保留 `knowledge_catalog.py`、`phase6_mcp.py` 两个薄 Python 入口及 Windows 一键工作台脚本 `start_workbench.bat`。更多分层说明见[架构](docs/ARCHITECTURE.md)。
 
 ## 文档
 
 | 需要做什么 | 看这里 |
 | --- | --- |
 | 准备邮件、附件或 OCR 资料 | [资料处理](docs/DATA_PIPELINE.md) |
-| 诊断流程、公开知识包与可选搜索 | [诊断指南](docs/DIAGNOSIS.md) |
+| MCP、受控出境 Agent 与本机 Web 工作台 | [MCP 与工作台指南](docs/UNIFIED_PCB_ASSISTANT.md) |
+| 诊断流程、矛盾排除、公开知识包与可选搜索 | [诊断指南](docs/DIAGNOSIS.md) |
 | 备份、恢复与切换数据库 | [数据库维护](docs/DATABASE_OPERATIONS.md) |
 | 安装依赖、运行测试、提交修改 | [依赖说明](requirements/README.md) · [开发](docs/DEVELOPMENT.md) · [测试](tests/README.md) |
 | 接口契约与工具映射 | [contracts/phase6](contracts/phase6/README.md) |

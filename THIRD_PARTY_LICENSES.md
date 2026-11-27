@@ -38,6 +38,18 @@ local mail ingestion. It is distributed as an independent package; if you
 ship a bundled application, keep it as a separately replaceable module and
 include its licence text and source offer as required by LGPL-3.0.
 
+## Optional Agent orchestration (`requirements-agent.txt`)
+
+The default bounded Agent loop uses only the Python standard library. If the
+optional `PydanticAI` backend is installed:
+
+| Component | Licence |
+| --- | --- |
+| pydantic-ai-slim | MIT |
+| pydantic | MIT |
+| openai | Apache-2.0 |
+| httpx | BSD-3-Clause |
+
 ## Optional local training (`requirements-training.txt`)
 
 | Component | Licence |

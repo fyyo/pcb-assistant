@@ -404,10 +404,21 @@ class MissingReferenceOriginAuditTests(unittest.TestCase):
         self.assertEqual(summary["unexplained_by_retained_manifests"], 0)
 
 
+def _live_profile_available(profile: str, audit_date: str) -> bool:
+    if not LIVE_AUDITS[audit_date].is_file():
+        return False
+    runner = MissingReferenceOriginAudit(
+        ROOT,
+        profile=profile,
+        **PROFILE_DEFAULTS[profile],
+    )
+    return all(path.is_file() for path in runner._input_paths())
+
+
 class LiveWorkspaceCoverageTests(unittest.TestCase):
     @unittest.skipUnless(
-        LIVE_AUDITS['20261021'].is_file(),
-        "live audit assets are not available",
+        _live_profile_available("v1", "20261021"),
+        "live v1 audit assets are not available",
     )
     def test_live_workspace_covers_every_audited_target(self):
         runner = MissingReferenceOriginAudit(ROOT)
@@ -435,7 +446,7 @@ class LiveWorkspaceCoverageTests(unittest.TestCase):
 
 
     @unittest.skipUnless(
-        LIVE_AUDITS['20261105'].is_file(),
+        _live_profile_available("v3", "20261105"),
         "live v3 audit assets are not available",
     )
     def test_live_v3_workspace_uses_merged_sources(self):
