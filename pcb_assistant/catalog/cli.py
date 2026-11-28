@@ -755,6 +755,8 @@ def main() -> int:
     workbench_parser.add_argument("--cases-dir", type=Path)
     workbench_parser.add_argument("--agent-config", type=Path,
                                   help="Optional local profile JSON (default: .private/agent_profile.json)")
+    workbench_parser.add_argument("--profile", default=None,
+                                  help="Named profile inside .private/agent_profile.json")
     workbench_parser.add_argument("--json", action="store_true", dest="as_json",
                                   help="Print one-shot JSON output")
     workbench_parser.add_argument("--mcp-config", action="store_true",
@@ -766,10 +768,23 @@ def main() -> int:
     web_parser.add_argument("--port", type=int, default=8765)
     web_parser.add_argument("--cases-dir", type=Path)
     web_parser.add_argument("--agent-config", type=Path)
+    web_parser.add_argument("--profile", default=None,
+                            help="Initial active profile inside .private/agent_profile.json")
     web_parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
     web_parser.add_argument("--api-token", default=None)
     web_parser.add_argument("--open", action="store_true", dest="open_browser",
                             help="Open the workbench in the default browser")
+    web_parser.add_argument("--reuse-running", action="store_true",
+                            help="If workbench is already running on host:port, open it and exit 0")
+    web_parser.add_argument("--auto-port", action="store_true",
+                            help="If preferred port is busy, automatically select next free port")
+    doctor_parser = commands.add_parser(
+        "doctor", help="Inspect Python runtime, read-only Catalog, privacy assets, and LLM profile")
+    doctor_parser.add_argument("--json", action="store_true", dest="as_json",
+                               help="Print structured JSON report")
+    doctor_parser.add_argument("--probe-llm", action="store_true",
+                               help="Send a minimal zero-data connectivity probe to the active LLM profile")
+    doctor_parser.add_argument("--agent-config", type=Path, default=None)
     search_parser = commands.add_parser("search")
     search_parser.add_argument("query", nargs="?", default="")
     search_parser.add_argument("--type", choices=DOCUMENT_TYPES)
@@ -787,11 +802,23 @@ def main() -> int:
     relation_parser.add_argument("--limit", type=int, default=50)
     relation_parser.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
-    if args.command != "build" and not Path(args.catalog).is_dir():
+    if args.command not in ("build", "doctor") and not Path(args.catalog).is_dir():
         print(_missing_catalog_hint(args.catalog), file=sys.stderr)
     if args.command == "chat" and not args.question and (args.as_json or args.export):
         parser.error("--json and --export require a question")
     try:
+        if args.command == "doctor":
+            import pcb_assistant.config as runtime_config
+            report = runtime_config.run_doctor(
+                catalog_directory=args.catalog,
+                profile_path=args.agent_config or runtime_config.DEFAULT_PROFILE_PATH,
+                probe_llm=args.probe_llm,
+            )
+            if args.as_json:
+                print(json.dumps(report, ensure_ascii=False, indent=2))
+            else:
+                print(runtime_config.format_doctor_text(report))
+            return 1 if report.get("status") == "failed" else 0
         if args.command == "build":
             from pcb_assistant.catalog.build import build
             build(args.root, args.output, mail_sources=args.mail_source,
@@ -917,6 +944,8 @@ def main() -> int:
                 wb_argv.extend(["--cases-dir", str(args.cases_dir)])
             if args.agent_config:
                 wb_argv.extend(["--agent-config", str(args.agent_config)])
+            if args.profile:
+                wb_argv.extend(["--profile", args.profile])
             if args.as_json:
                 wb_argv.append("--json")
             if args.mcp_config:
@@ -936,10 +965,16 @@ def main() -> int:
                 web_argv.extend(["--cases-dir", str(args.cases_dir)])
             if args.agent_config:
                 web_argv.extend(["--agent-config", str(args.agent_config)])
+            if args.profile:
+                web_argv.extend(["--profile", args.profile])
             if args.api_token:
                 web_argv.extend(["--api-token", args.api_token])
             if args.open_browser:
                 web_argv.append("--open")
+            if args.reuse_running:
+                web_argv.append("--reuse-running")
+            if args.auto_port:
+                web_argv.append("--auto-port")
             return web_main(web_argv)
         elif args.command == "search":
             result = search(args.catalog, args.query, doc_type=args.type, source_type=args.source,

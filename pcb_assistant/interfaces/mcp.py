@@ -1122,6 +1122,11 @@ def main(argv=None):
         default='single',
         help='Expose only pcb_answer (single, default) or all 8 read-only tools (agent)',
     )
+    parser.add_argument('--agent-config', type=Path, default=None,
+                        help='Optional local profile JSON (defaults to .private/agent_profile.json)')
+    parser.add_argument('--profile', default=None, help='Named profile inside agent_profile.json')
+    parser.add_argument('--no-local-config', action='store_true',
+                        help='Ignore local .env and .private/agent_profile.json')
     parser.add_argument('--list-tools', action='store_true')
     parser.add_argument('--call', metavar='TOOL')
     parser.add_argument('--arguments-json', default='{}')
@@ -1129,14 +1134,40 @@ def main(argv=None):
     parser.add_argument('--self-test', action='store_true')
     args = parser.parse_args(argv)
 
-    with _catalog_context(args.catalog), _toolset_context(args.toolset):
-        if args.catalog is not None:
-            try:
-                _check_catalog(_catalog_directory())
-            except (OSError, sqlite3.Error, CatalogError, ValueError):
-                print('selected Catalog is unavailable or invalid', file=sys.stderr)
-                return 2
-        return _run(args)
+    import pcb_assistant.config as runtime_config
+
+    if args.no_local_config:
+        env_cm = contextmanager(lambda: (yield True))()
+    else:
+        try:
+            env_cm = runtime_config.runtime_env_context(
+                args.agent_config,
+                profile_name=args.profile,
+                ignore_errors=(args.agent_config is None),
+            )
+        except CatalogError:
+            print('invalid local agent configuration', file=sys.stderr)
+            return 2
+
+    try:
+        with env_cm:
+            selected_catalog = args.catalog
+            if selected_catalog is None:
+                import os
+                env_cat = os.environ.get('PCB_CATALOG', '').strip()
+                if env_cat:
+                    selected_catalog = Path(env_cat)
+            with _catalog_context(selected_catalog), _toolset_context(args.toolset):
+                if args.catalog is not None:
+                    try:
+                        _check_catalog(_catalog_directory())
+                    except (OSError, sqlite3.Error, CatalogError, ValueError):
+                        print('selected Catalog is unavailable or invalid', file=sys.stderr)
+                        return 2
+                return _run(args)
+    except CatalogError:
+        print('invalid local agent configuration', file=sys.stderr)
+        return 2
 
 
 def _run(args):

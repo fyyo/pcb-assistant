@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pcb-assistant"
+version = "6.3.0"
+description = "Read-only PCB lamination knowledge base, diagnosis assistant, local Web workbench, and MCP server"
+readme = "README.md"
+license = { text = "Apache-2.0" }
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+core = [
+    "jieba==0.42.1",
+]
+agent = [
+    "pydantic-ai-slim[openai]>=0.1,<2",
+]
+privacy = [
+    "spacy>=3.7,<4",
+]
+attachments = [
+    "openpyxl>=3.1",
+    "python-docx>=1.1",
+    "python-pptx>=0.6",
+    "pypdf>=4.0",
+    "pypdfium2>=4.0",
+    "rapidocr-onnxruntime>=1.3,<2; python_version < '3.13'",
+]
+
+[project.scripts]
+pcb-assistant = "pcb_assistant.catalog.cli:main"
+pcb-workbench = "pcb_assistant.interfaces.web_workbench:main"
+pcb-mcp = "pcb_assistant.interfaces.mcp:main"
+
+[tool.setuptools.packages.find]
+include = ["pcb_assistant*", "agent*"]

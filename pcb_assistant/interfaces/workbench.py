@@ -15,32 +15,18 @@ import sys
 import time
 
 from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG, json_text
+import pcb_assistant.config as runtime_config
 import pcb_assistant.interfaces.mcp as phase6_mcp
 from pcb_assistant.paths import ROOT, python_executable
 import pcb_assistant.router as router
 
 
-DEFAULT_PROFILE_PATH = ROOT / ".private" / "agent_profile.json"
+DEFAULT_PROFILE_PATH = runtime_config.DEFAULT_PROFILE_PATH
 DEFAULT_CASES_DIR = ROOT / ".private" / "cases"
 CASE_ID_RE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")
 CASE_SCHEMA = "pcb-case-workspace-v1"
-ALLOWED_PROFILE_ENV_KEYS = (
-    "PCB_ALLOW_CLOUD_EGRESS",
-    "PCB_EGRESS_SCOPE",
-    "PCB_AGENT_LOOP",
-    "PCB_AGENT_BACKEND",
-    "PCB_AGENT_MAX_STEPS",
-    "PCB_AGENT_MAX_TOOL_CALLS",
-    "PCB_LLM_PROVIDER",
-    "PCB_LLM_BASE_URL",
-    "PCB_LLM_MODEL",
-    "PCB_LLM_API_KEY_ENV",
-    "PCB_LLM_TIMEOUT_SECONDS",
-    "PCB_LLM_MAX_OUTPUT_TOKENS",
-    "PCB_ALLOW_LOCALHOST_HTTP",
-    "PCB_MAX_EVIDENCE_CHARS",
-)
-_KEY_NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
+ALLOWED_PROFILE_ENV_KEYS = runtime_config.ALLOWED_PROFILE_ENV_KEYS
+_KEY_NAME_RE = runtime_config.KEY_NAME_RE
 
 
 def _utc_now() -> str:
@@ -56,40 +42,26 @@ def validate_case_id(case_id: str) -> str:
 def load_local_agent_env(
     profile_path: Path | None = None,
     *,
+    profile_name: str | None = None,
+    dotenv_path: Path | None = None,
     base_env: dict[str, str] | None = None,
 ) -> tuple[dict[str, str], bool]:
-    """Load optional local agent profile JSON into an environment mapping.
+    """Load optional local agent profile JSON + .env into an environment mapping.
 
     Explicit environment variables in ``base_env`` always take precedence over
-    values from the profile file. Never logs or prints secret values.
+    values from ``.env`` and the profile file. Never logs or prints secret values.
     """
-    merged = dict(os.environ if base_env is None else base_env)
     target = Path(profile_path) if profile_path is not None else DEFAULT_PROFILE_PATH
-    if not target.is_file():
-        return merged, False
-    try:
-        raw = json.loads(target.read_text(encoding="utf-8-sig"))
-    except (OSError, ValueError) as exc:
-        raise CatalogError("invalid_agent_profile") from exc
-    if not isinstance(raw, dict):
-        raise CatalogError("invalid_agent_profile")
-    for key in ALLOWED_PROFILE_ENV_KEYS:
-        if key in raw and raw[key] is not None and not merged.get(key):
-            value = raw[key]
-            if isinstance(value, bool):
-                merged[key] = "true" if value else "false"
-            else:
-                merged[key] = str(value).strip()
-    key_name = merged.get("PCB_LLM_API_KEY_ENV", "OPENAI_API_KEY").strip()
-    if (
-        "api_key" in raw
-        and isinstance(raw["api_key"], str)
-        and raw["api_key"].strip()
-        and _KEY_NAME_RE.fullmatch(key_name)
-        and not merged.get(key_name)
-    ):
-        merged[key_name] = raw["api_key"].strip()
-    return merged, True
+    use_default_dotenv = (
+        base_env is None and dotenv_path is None and target == DEFAULT_PROFILE_PATH
+    )
+    return runtime_config.load_runtime_env(
+        target,
+        profile_name=profile_name,
+        dotenv_path=dotenv_path,
+        base_env=base_env,
+        include_default_dotenv=use_default_dotenv,
+    )
 
 
 class CaseWorkspace:
@@ -283,10 +255,12 @@ def mcp_client_config(
     *,
     toolset: str = "agent",
     include_agent_env_placeholders: bool = True,
+    http_origin: str = "http://127.0.0.1:8765",
 ) -> dict:
     """Return ready-to-paste MCP client & mcpo snippets without secrets."""
     cat = str(Path(catalog_directory).expanduser().resolve())
-    py = python_executable(".venv")
+    py_venv = Path(python_executable(".venv"))
+    py = str(py_venv) if py_venv.is_file() else sys.executable
     script = str((ROOT / "phase6_mcp.py").resolve())
     args = ["-X", "utf8", "-B", script, "--catalog", cat]
     if toolset == "agent":
@@ -304,12 +278,29 @@ def mcp_client_config(
             "DEEPSEEK_API_KEY": "<YOUR_API_KEY>",
         }
     return {
+        "recommended_mcpServers_using_local_profile": {
+            "mcpServers": {
+                "pcb-assistant": {
+                    "command": py,
+                    "args": args,
+                    "cwd": str(ROOT),
+                }
+            }
+        },
         "mcpServers": {
             "pcb-assistant": {
                 "command": py,
                 "args": args,
                 "cwd": str(ROOT),
                 **({"env": env_block} if env_block else {}),
+            }
+        },
+        "streamable_http_mcp": {
+            "mcpServers": {
+                "pcb-assistant-http": {
+                    "type": "streamable-http",
+                    "url": f"{http_origin.rstrip('/')}/mcp",
+                }
             }
         },
         "mcpo_command_for_open_webui": (
@@ -559,6 +550,7 @@ def main(argv=None) -> int:
         "--agent-config", type=Path, default=None,
         help="可选本地配置 JSON（默认读取 .private/agent_profile.json）",
     )
+    parser.add_argument("--profile", default=None, help="选择命名模型渠道（默认使用当前激活渠道）")
     parser.add_argument("--json", action="store_true", dest="as_json", help="单次提问输出完整 JSON")
     parser.add_argument("--mcp-config", action="store_true", help="输出 MCP 客户端 / Open WebUI (mcpo) 接入配置")
     parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
@@ -571,7 +563,7 @@ def main(argv=None) -> int:
         return 0
 
     try:
-        env, loaded = load_local_agent_env(args.agent_config)
+        env, loaded = load_local_agent_env(args.agent_config, profile_name=args.profile)
         workspace = CaseWorkspace(args.cases_dir, catalog_directory=args.catalog)
         active_case = workspace.open_or_create(args.case_id) if args.case_id else None
     except CatalogError as exc:

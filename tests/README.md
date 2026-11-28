@@ -18,7 +18,7 @@ python -X utf8 -B -m unittest discover -v
 | `test_pp_selection.py`、`test_stackup_retrieval.py`、`test_table_*.py`、`test_field_evidence.py` | 材料选型、表格字段、来源行列与证据缺口 |
 | `test_attachments.py`、`test_ocr_supplement.py`、`test_privacy.py` | 附件、OCR 与隐私处理 |
 | `test_agent_workflow.py`、`test_agent_scope.py`、`test_pcb_assistant.py` | 诊断范围、矛盾排除、多跳附件追踪、分流与病例上下文 |
-| `test_agent_runtime.py`、`test_workbench.py`、`test_web_workbench.py` | 脱敏出境受控 Agent 循环、持久化病例工作台、本机 Web UI 与 `/mcp` HTTP 端点 |
+| `test_agent_runtime.py`、`test_workbench.py`、`test_web_workbench.py`、`test_config_and_doctor.py` | 脱敏出境受控 Agent 循环、持久化病例工作台、本机 Web UI、统一配置多渠道与 `doctor` 环境自检 |
 | `test_phase6_*.py`、`test_mcp_catalog_selection.py` | 契约、MCP、脱敏与 stdio 启动 |
 | `test_catalog_backup.py`、`test_database_delivery.py` | 合成 Catalog 备份、恢复与交付检查 |
 

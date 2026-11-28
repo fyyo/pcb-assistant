@@ -17,10 +17,13 @@ import re
 import sys
 import threading
 import time
-from urllib.parse import unquote, urlsplit
+from urllib.error import URLError
+from urllib.parse import parse_qs, unquote, urlsplit
+from urllib.request import urlopen
 import webbrowser
 
 from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG, json_text
+import pcb_assistant.config as runtime_config
 import pcb_assistant.interfaces.mcp as phase6_mcp
 import pcb_assistant.interfaces.workbench as workbench
 from pcb_assistant.interfaces.workbench_ui import WORKBENCH_HTML
@@ -31,67 +34,38 @@ DEFAULT_PORT = 8765
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 MAX_REQUEST_BODY_BYTES = 1_000_000
 _CASE_PATH_RE = re.compile(r"^/api/cases/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:/(notes|clear|report))?$")
-_KEY_NAME_RE = re.compile(r"^[A-Z][A-Z0-9_]{0,63}$")
 
 
-def _safe_profile_view(profile_path: Path, base_env: dict[str, str] | None = None) -> dict:
-    """Return non-secret profile settings plus a boolean has_api_key flag."""
-    env, loaded = workbench.load_local_agent_env(profile_path, base_env=base_env)
-    key_env = env.get("PCB_LLM_API_KEY_ENV", "DEEPSEEK_API_KEY").strip() or "DEEPSEEK_API_KEY"
-    return {
-        "profile_loaded": loaded,
-        "PCB_ALLOW_CLOUD_EGRESS": env.get("PCB_ALLOW_CLOUD_EGRESS", "false").strip().lower() == "true",
-        "PCB_AGENT_LOOP": env.get("PCB_AGENT_LOOP", "true").strip().lower() == "true",
-        "PCB_EGRESS_SCOPE": env.get("PCB_EGRESS_SCOPE", "public_only").strip() or "public_only",
-        "PCB_LLM_PROVIDER": env.get("PCB_LLM_PROVIDER", "openai_chat_completions").strip() or "openai_chat_completions",
-        "PCB_LLM_BASE_URL": env.get("PCB_LLM_BASE_URL", "").strip(),
-        "PCB_LLM_MODEL": env.get("PCB_LLM_MODEL", "").strip(),
-        "PCB_LLM_API_KEY_ENV": key_env,
-        "PCB_ALLOW_LOCALHOST_HTTP": env.get("PCB_ALLOW_LOCALHOST_HTTP", "false").strip().lower() == "true",
-        "has_api_key": bool(env.get(key_env, "").strip()),
-    }
+def _safe_profile_view(
+    profile_path: Path,
+    base_env: dict[str, str] | None = None,
+    *,
+    profile_name: str | None = None,
+) -> dict:
+    """Return non-secret multi-profile settings plus presets and has_api_key."""
+    return runtime_config.safe_profile_view(
+        profile_path,
+        profile_name=profile_name,
+        base_env=base_env,
+    )
 
 
 def _save_profile(profile_path: Path, payload: dict) -> dict:
-    if not isinstance(payload, dict):
-        raise CatalogError("invalid_agent_profile")
-    existing = {}
-    if profile_path.is_file():
-        try:
-            raw = json.loads(profile_path.read_text(encoding="utf-8-sig"))
-            if isinstance(raw, dict):
-                existing = raw
-        except (OSError, ValueError):
-            existing = {}
+    return runtime_config.save_profile_settings(profile_path, payload)
 
-    updated = dict(existing)
-    for key in workbench.ALLOWED_PROFILE_ENV_KEYS:
-        if key not in payload:
-            continue
-        value = payload[key]
-        if key == "PCB_EGRESS_SCOPE" and str(value).strip() not in ("public_only", "sanitized_catalog"):
-            raise CatalogError("invalid_egress_scope")
-        if key == "PCB_LLM_PROVIDER" and str(value).strip() not in ("openai_chat_completions", "openai_responses"):
-            raise CatalogError("invalid_provider")
-        if key == "PCB_LLM_API_KEY_ENV" and not _KEY_NAME_RE.fullmatch(str(value).strip()):
-            raise CatalogError("invalid_api_key_env")
-        if isinstance(value, bool):
-            updated[key] = value
-        else:
-            updated[key] = str(value).strip()
 
-    if "api_key" in payload and isinstance(payload["api_key"], str) and payload["api_key"].strip():
-        updated["api_key"] = payload["api_key"].strip()
-
-    profile_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = profile_path.with_suffix(".json.tmp")
-    tmp.write_text(json_text(updated, pretty=True) + "\n", encoding="utf-8")
+def _probe_existing_workbench(host: str, port: int) -> bool:
+    """Return True if an existing PCB workbench server responds healthily on host:port."""
+    check_host = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
+    url = f"http://{check_host}:{port}/api/health"
     try:
-        tmp.chmod(0o600)
-    except OSError:
-        pass
-    tmp.replace(profile_path)
-    return _safe_profile_view(profile_path)
+        with urlopen(url, timeout=0.8) as resp:
+            if resp.status != 200:
+                return False
+            data = json.loads(resp.read(8192).decode("utf-8"))
+            return isinstance(data, dict) and data.get("status") == "ok" and "toolset" in data
+    except (OSError, URLError, ValueError):
+        return False
 
 
 def _render_case_markdown_text(case_data: dict) -> str:
@@ -221,7 +195,9 @@ def create_server(
             return parsed
 
         def do_GET(self):
-            path = unquote(urlsplit(self.path).path)
+            parsed_url = urlsplit(self.path)
+            path = unquote(parsed_url.path)
+            query_params = parse_qs(parsed_url.query)
             if path in ("/", "/index.html"):
                 self._send_bytes(
                     HTTPStatus.OK,
@@ -239,6 +215,7 @@ def create_server(
                         "status": "ok",
                         "catalog_version": phase6_mcp.catalog_version(state.catalog_directory),
                         "toolset": state.toolset,
+                        "active_profile": profile.get("active_profile", "default"),
                         "profile_configured": bool(
                             profile["PCB_ALLOW_CLOUD_EGRESS"]
                             and profile["has_api_key"]
@@ -247,7 +224,31 @@ def create_server(
                     })
                     return
                 if path == "/api/profile":
-                    self._send_json(HTTPStatus.OK, _safe_profile_view(state.profile_path))
+                    req_name = (query_params.get("name") or [None])[0]
+                    self._send_json(
+                        HTTPStatus.OK,
+                        _safe_profile_view(state.profile_path, profile_name=req_name),
+                    )
+                    return
+                if path == "/api/doctor":
+                    report = runtime_config.run_doctor(
+                        catalog_directory=state.catalog_directory,
+                        profile_path=state.profile_path,
+                        probe_llm=(query_params.get("probe") or [""])[0] in ("1", "true"),
+                    )
+                    self._send_json(HTTPStatus.OK, report)
+                    return
+                if path == "/api/mcp-config":
+                    host_hdr = self.headers.get("Host") or f"{DEFAULT_HOST}:{DEFAULT_PORT}"
+                    origin = f"http://{host_hdr}"
+                    self._send_json(
+                        HTTPStatus.OK,
+                        workbench.mcp_client_config(
+                            state.catalog_directory,
+                            toolset=state.toolset,
+                            http_origin=origin,
+                        ),
+                    )
                     return
                 if path == "/api/cases":
                     self._send_json(HTTPStatus.OK, {"cases": state.workspace.list_cases()})
@@ -294,6 +295,13 @@ def create_server(
                 if path == "/api/profile":
                     saved = _save_profile(state.profile_path, body)
                     self._send_json(HTTPStatus.OK, saved)
+                    return
+                if path == "/api/profile/test":
+                    probe = runtime_config.probe_llm_connection(
+                        state.profile_path,
+                        overrides=body,
+                    )
+                    self._send_json(HTTPStatus.OK, probe)
                     return
                 if path == "/api/cases":
                     case_id = body.get("case_id", "")
@@ -398,33 +406,86 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="PCB 压合本机 Web 工作台 + JSON API + MCP Streamable HTTP 服务",
     )
-    parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
-    parser.add_argument("--host", default=DEFAULT_HOST)
-    parser.add_argument("--port", type=int, default=DEFAULT_PORT)
+    parser.add_argument("--catalog", type=Path, default=None)
+    parser.add_argument("--host", default=None)
+    parser.add_argument("--port", type=int, default=None)
     parser.add_argument("--cases-dir", type=Path, default=workbench.DEFAULT_CASES_DIR)
     parser.add_argument("--agent-config", type=Path, default=workbench.DEFAULT_PROFILE_PATH)
+    parser.add_argument("--profile", default=None, help="启动时切换激活的命名模型渠道")
     parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
     parser.add_argument("--api-token", default=None, help="非本机地址监听时必须提供 Bearer Token")
     parser.add_argument("--open", action="store_true", dest="open_browser", help="启动后自动打开浏览器")
+    parser.add_argument("--reuse-running", action="store_true", help="若同端口已有本工作台运行则直接打开并退出")
+    parser.add_argument("--auto-port", action="store_true", help="若首选端口被其他程序占用则自动顺延空闲端口")
     args = parser.parse_args(argv)
 
+    env, _ = runtime_config.load_runtime_env(
+        args.agent_config,
+        profile_name=args.profile,
+        include_default_dotenv=(args.agent_config == workbench.DEFAULT_PROFILE_PATH),
+    )
+    catalog_dir = args.catalog
+    if catalog_dir is None:
+        env_cat = env.get("PCB_CATALOG", "").strip()
+        catalog_dir = Path(env_cat) if env_cat else DEFAULT_CATALOG
+    host = (args.host or env.get("PCB_WEB_HOST") or DEFAULT_HOST).strip()
+    if args.port is not None:
+        preferred_port = int(args.port)
+    else:
+        try:
+            preferred_port = int(env.get("PCB_WEB_PORT") or DEFAULT_PORT)
+        except ValueError:
+            preferred_port = DEFAULT_PORT
+
+    if args.profile:
+        try:
+            runtime_config.save_profile_settings(
+                args.agent_config,
+                {"action": "activate", "profile_name": args.profile},
+            )
+        except CatalogError:
+            pass
+
+    if args.reuse_running and preferred_port > 0 and _probe_existing_workbench(host, preferred_port):
+        open_host = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
+        url = f"http://{open_host}:{preferred_port}/"
+        print(f"检测到 PCB 压合排查工作台已在运行：{url}")
+        if args.open_browser:
+            webbrowser.open(url)
+        return 0
+
     try:
-        phase6_mcp._check_catalog(args.catalog)
-        server = create_server(
-            host=args.host,
-            port=args.port,
-            catalog_directory=args.catalog,
-            cases_dir=args.cases_dir,
-            profile_path=args.agent_config,
-            toolset=args.toolset,
-            api_token=args.api_token,
+        phase6_mcp._check_catalog(catalog_dir)
+        candidates = (
+            [preferred_port, *range(preferred_port + 1, preferred_port + 11)]
+            if (args.auto_port and preferred_port > 0)
+            else [preferred_port]
         )
+        server = None
+        last_exc: Exception | None = None
+        for candidate_port in candidates:
+            try:
+                server = create_server(
+                    host=host,
+                    port=candidate_port,
+                    catalog_directory=catalog_dir,
+                    cases_dir=args.cases_dir,
+                    profile_path=args.agent_config,
+                    toolset=args.toolset,
+                    api_token=args.api_token,
+                )
+                break
+            except OSError as exc:
+                last_exc = exc
+        if server is None:
+            raise last_exc or RuntimeError("port_bind_failed")
     except Exception as exc:
         print(f"启动失败：{exc}", file=sys.stderr)
         return 2
 
     actual_host, actual_port = server.server_address[:2]
-    url = f"http://{actual_host}:{actual_port}/"
+    open_host = "127.0.0.1" if actual_host in ("0.0.0.0", "::", "") else actual_host
+    url = f"http://{open_host}:{actual_port}/"
     print(f"PCB 压合排查工作台已启动：{url}")
     print(f"MCP Streamable HTTP 端点：{url}mcp (toolset={args.toolset})")
     print("按 Ctrl+C 停止服务。")

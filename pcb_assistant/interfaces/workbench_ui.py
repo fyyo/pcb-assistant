@@ -238,8 +238,9 @@ WORKBENCH_HTML = r"""<!DOCTYPE html>
     <div class="case-list" id="caseList"></div>
     <div class="side-footer">
       <button class="btn" id="exportReportBtn" disabled>📄 导出当前病例 Markdown</button>
-      <button class="btn" id="openSettingsBtn">⚙ 外部 API 与脱敏配置</button>
-      <button class="btn" id="openMcpInfoBtn">🔌 MCP / 数字员工接入地址</button>
+      <button class="btn" id="openSettingsBtn">⚙ 模型渠道与脱敏配置</button>
+      <button class="btn" id="openDoctorBtn">🩺 运行环境与自检</button>
+      <button class="btn" id="openMcpInfoBtn">🔌 MCP / 数字员工接入</button>
     </div>
   </aside>
 
@@ -247,7 +248,7 @@ WORKBENCH_HTML = r"""<!DOCTYPE html>
     <header class="topbar">
       <div class="topbar-left">
         <span class="topbar-title" id="activeCaseTitle">临时会话</span>
-        <span class="badge" id="profileBadge">检测配置…</span>
+        <span class="badge" id="profileBadge" style="cursor:pointer;" title="点击切换或配置模型渠道">检测配置…</span>
       </div>
       <div style="display:flex; align-items:center; gap:10px;">
         <div class="seg" role="group" aria-label="运行模式">
@@ -279,16 +280,38 @@ WORKBENCH_HTML = r"""<!DOCTYPE html>
 
 <!-- Settings Modal -->
 <div class="modal-mask" id="settingsModal">
-  <div class="modal">
-    <h3>外部 API 与脱敏出境配置</h3>
-    <div class="hint" style="margin-bottom:14px;">配置仅保存在本机 <code>.private/agent_profile.json</code>（已加入 .gitignore），密钥不会回显明文。</div>
+  <div class="modal" style="width:580px;">
+    <h3>模型渠道与脱敏出境配置</h3>
+    <div class="hint" style="margin-bottom:14px;">配置统一保存在本机 <code>.private/agent_profile.json</code>（Web、CLI 与 MCP 服务自动共享），密钥绝不回显明文。</div>
+    <div class="field">
+      <label>当前命名渠道（可保存多套网关随时切换）</label>
+      <div style="display:flex; gap:6px;">
+        <select id="cfgProfileSelect" style="flex:1;"></select>
+        <button class="btn sm" type="button" id="newProfileBtn">+ 新建渠道</button>
+        <button class="btn sm" type="button" id="deleteProfileBtn">删除</button>
+      </div>
+    </div>
+    <div class="field">
+      <label>快速套用预设模板（可选）</label>
+      <select id="cfgPresetSelect">
+        <option value="">-- 选择常见网关模板自动填充 --</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>渠道显示名称</label>
+      <input type="text" id="cfgLabel" placeholder="例如：内部 NewAPI 网关 / 本机 Ollama" />
+    </div>
     <div class="field row">
       <input type="checkbox" id="cfgAllowEgress" />
-      <label for="cfgAllowEgress">允许通过本地脱敏网关调用外部 API（PCB_ALLOW_CLOUD_EGRESS）</label>
+      <label for="cfgAllowEgress">允许通过本机脱敏网关调用模型接口（PCB_ALLOW_CLOUD_EGRESS）</label>
     </div>
     <div class="field row">
       <input type="checkbox" id="cfgAgentLoop" />
       <label for="cfgAgentLoop">启用多步受控 Agent 查证循环（PCB_AGENT_LOOP）</label>
+    </div>
+    <div class="field row">
+      <input type="checkbox" id="cfgLocalHttp" />
+      <label for="cfgLocalHttp">允许连接本机 HTTP 模型服务（如 Ollama/vLLM 127.0.0.1，PCB_ALLOW_LOCALHOST_HTTP）</label>
     </div>
     <div class="field">
       <label>脱敏出境范围（PCB_EGRESS_SCOPE）</label>
@@ -300,7 +323,7 @@ WORKBENCH_HTML = r"""<!DOCTYPE html>
     <div class="field">
       <label>接口协议（PCB_LLM_PROVIDER）</label>
       <select id="cfgProvider">
-        <option value="openai_chat_completions">openai_chat_completions（DeepSeek / 通义千问 / OpenAI / NewAPI）</option>
+        <option value="openai_chat_completions">openai_chat_completions（DeepSeek / 通义千问 / OpenAI / NewAPI / Ollama）</option>
         <option value="openai_responses">openai_responses（OpenAI Responses API）</option>
       </select>
     </div>
@@ -317,23 +340,48 @@ WORKBENCH_HTML = r"""<!DOCTYPE html>
       <input type="text" id="cfgKeyEnv" placeholder="DEEPSEEK_API_KEY" />
     </div>
     <div class="field">
-      <label>API Key（仅写入本机 .private/agent_profile.json）</label>
+      <label>API Key（留空保持原密钥；本机 Ollama 可免填）</label>
       <input type="password" id="cfgApiKey" placeholder="填入 API Key" autocomplete="off" />
       <div class="hint" id="cfgKeyStatus"></div>
     </div>
+    <div id="probeResultBox" class="trace-box" style="display:none; margin-top:8px;"></div>
+    <div class="modal-foot" style="justify-content:space-between;">
+      <button class="btn" type="button" id="testConnBtn">⚡ 测试连接</button>
+      <div style="display:flex; gap:8px;">
+        <button class="btn" type="button" id="closeSettingsBtn">取消</button>
+        <button class="btn primary" type="button" id="saveSettingsBtn">保存并激活渠道</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Doctor Modal -->
+<div class="modal-mask" id="doctorModal">
+  <div class="modal" style="width:580px;">
+    <h3>运行环境与知识库自检</h3>
+    <div id="doctorBody" style="margin-top:10px;">正在检测…</div>
     <div class="modal-foot">
-      <button class="btn" id="closeSettingsBtn">取消</button>
-      <button class="btn primary" id="saveSettingsBtn">保存配置</button>
+      <button class="btn" type="button" id="doctorProbeBtn">⚡ 含模型连通性实测</button>
+      <button class="btn primary" type="button" id="closeDoctorBtn">关闭</button>
     </div>
   </div>
 </div>
 
 <!-- MCP / Digital Employee Info Modal -->
 <div class="modal-mask" id="mcpModal">
-  <div class="modal">
-    <h3>MCP / 数字员工接入地址</h3>
+  <div class="modal" style="width:600px;">
+    <h3>MCP / 数字员工一键接入配置</h3>
     <div class="hint" style="margin-bottom:10px;">
-      当前本机服务同时暴露标准 JSON API 与 MCP Streamable HTTP 端点，可直接挂载到 Dify、MaxKB、FastGPT、Open WebUI 或钉钉/飞书/企微机器人：
+      <code>phase6_mcp.py</code> 已自动读取本机保存的模型渠道配置，因此外部客户端（Claude Desktop / Cursor / Cherry Studio 等）<strong>无需在配置文件中写入明文 API Key</strong>：
+    </div>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <strong style="font-size:12px;">推荐：本地 stdio MCP（免密钥配置）</strong>
+      <button class="btn sm" type="button" id="copyStdioMcpBtn">复制 JSON</button>
+    </div>
+    <pre class="trace-box" id="mcpStdioPre" style="white-space:pre-wrap; user-select:all; margin-bottom:12px;"></pre>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+      <strong style="font-size:12px;">HTTP 平台：Streamable HTTP MCP（Dify / FastGPT / MaxKB）</strong>
+      <button class="btn sm" type="button" id="copyHttpMcpBtn">复制 JSON</button>
     </div>
     <pre class="trace-box" id="mcpInfoPre" style="white-space:pre-wrap; user-select:all;"></pre>
     <div class="modal-foot">
@@ -431,12 +479,13 @@ async function loadHealthAndProfile() {
 function updateProfileBadge() {
   const badge = document.getElementById('profileBadge');
   const p = state.profile || {};
-  if (p.PCB_ALLOW_CLOUD_EGRESS && p.has_api_key && p.PCB_LLM_MODEL) {
+  const ch = p.active_profile || 'default';
+  if (p.PCB_ALLOW_CLOUD_EGRESS && (p.has_api_key || p.PCB_ALLOW_LOCALHOST_HTTP) && p.PCB_LLM_MODEL) {
     badge.className = 'badge ok';
-    badge.textContent = `外部 API 就绪 · ${p.PCB_LLM_MODEL} (${p.PCB_EGRESS_SCOPE || 'public_only'})`;
+    badge.textContent = `渠道 [${ch}] · ${p.PCB_LLM_MODEL} (${p.PCB_EGRESS_SCOPE || 'public_only'})`;
   } else {
     badge.className = 'badge warn';
-    badge.textContent = '未配置外部 API（当前将自动走本地离线证据）';
+    badge.textContent = `渠道 [${ch}] · 纯本地离线模式（点击配置外部模型）`;
   }
 }
 
@@ -736,12 +785,38 @@ document.getElementById('exportReportBtn').onclick = () => {
   window.location.href = `/api/cases/${encodeURIComponent(state.activeCaseId)}/report`;
 };
 
-// Settings modal
-document.getElementById('openSettingsBtn').onclick = async () => {
-  state.profile = await api('/api/profile');
-  const p = state.profile;
+// Settings modal (multi-profile + presets + live connectivity test)
+let editingProfileName = 'default';
+
+function fillSettingsForm(p) {
+  editingProfileName = p.active_profile || 'default';
+  const sel = document.getElementById('cfgProfileSelect');
+  sel.innerHTML = '';
+  const profiles = (p.profiles && p.profiles.length)
+    ? p.profiles
+    : [{ name: editingProfileName, label: editingProfileName }];
+  for (const item of profiles) {
+    const opt = document.createElement('option');
+    opt.value = item.name;
+    opt.textContent = item.label && item.label !== item.name
+      ? `${item.name} — ${item.label}`
+      : item.name;
+    if (item.name === editingProfileName) opt.selected = true;
+    sel.appendChild(opt);
+  }
+  const presetSel = document.getElementById('cfgPresetSelect');
+  presetSel.innerHTML = '<option value="">-- 选择常见网关模板自动填充 --</option>';
+  for (const pr of (p.presets || [])) {
+    const opt = document.createElement('option');
+    opt.value = pr.id;
+    opt.textContent = pr.label;
+    presetSel.appendChild(opt);
+  }
+  const activeItem = profiles.find(x => x.name === editingProfileName) || {};
+  document.getElementById('cfgLabel').value = activeItem.label || '';
   document.getElementById('cfgAllowEgress').checked = !!p.PCB_ALLOW_CLOUD_EGRESS;
   document.getElementById('cfgAgentLoop').checked = p.PCB_AGENT_LOOP !== false;
+  document.getElementById('cfgLocalHttp').checked = !!p.PCB_ALLOW_LOCALHOST_HTTP;
   document.getElementById('cfgScope').value = p.PCB_EGRESS_SCOPE || 'sanitized_catalog';
   document.getElementById('cfgProvider').value = p.PCB_LLM_PROVIDER || 'openai_chat_completions';
   document.getElementById('cfgBaseUrl').value = p.PCB_LLM_BASE_URL || '';
@@ -749,17 +824,20 @@ document.getElementById('openSettingsBtn').onclick = async () => {
   document.getElementById('cfgKeyEnv').value = p.PCB_LLM_API_KEY_ENV || 'DEEPSEEK_API_KEY';
   document.getElementById('cfgApiKey').value = '';
   document.getElementById('cfgKeyStatus').textContent = p.has_api_key
-    ? '状态：已检测到本机保存的密钥或环境变量；留空保存则保持原密钥不变。'
-    : '状态：尚未保存密钥。';
-  document.getElementById('settingsModal').classList.add('open');
-};
-document.getElementById('closeSettingsBtn').onclick = () => {
-  document.getElementById('settingsModal').classList.remove('open');
-};
-document.getElementById('saveSettingsBtn').onclick = async () => {
+    ? `状态：渠道 [${editingProfileName}] 已保存密钥（或已配置环境变量）；留空保存则保持原密钥不变。`
+    : `状态：渠道 [${editingProfileName}] 尚未保存密钥。`;
+  const probeBox = document.getElementById('probeResultBox');
+  probeBox.style.display = 'none';
+  probeBox.textContent = '';
+}
+
+function collectSettingsPayload() {
   const payload = {
+    profile_name: editingProfileName,
+    label: document.getElementById('cfgLabel').value.trim() || editingProfileName,
     PCB_ALLOW_CLOUD_EGRESS: document.getElementById('cfgAllowEgress').checked,
     PCB_AGENT_LOOP: document.getElementById('cfgAgentLoop').checked,
+    PCB_ALLOW_LOCALHOST_HTTP: document.getElementById('cfgLocalHttp').checked,
     PCB_EGRESS_SCOPE: document.getElementById('cfgScope').value,
     PCB_LLM_PROVIDER: document.getElementById('cfgProvider').value,
     PCB_LLM_BASE_URL: document.getElementById('cfgBaseUrl').value.trim(),
@@ -768,8 +846,94 @@ document.getElementById('saveSettingsBtn').onclick = async () => {
   };
   const key = document.getElementById('cfgApiKey').value.trim();
   if (key) payload.api_key = key;
+  return payload;
+}
+
+async function openSettingsModal() {
+  state.profile = await api('/api/profile');
+  fillSettingsForm(state.profile);
+  document.getElementById('settingsModal').classList.add('open');
+}
+
+document.getElementById('openSettingsBtn').onclick = openSettingsModal;
+document.getElementById('profileBadge').onclick = openSettingsModal;
+document.getElementById('cfgProfileSelect').onchange = async (e) => {
+  const chosen = e.target.value;
+  const view = await api('/api/profile?name=' + encodeURIComponent(chosen));
+  fillSettingsForm(view);
+};
+document.getElementById('cfgPresetSelect').onchange = (e) => {
+  const pid = e.target.value;
+  if (!pid || !state.profile) return;
+  const pr = (state.profile.presets || []).find(x => x.id === pid);
+  if (!pr) return;
+  document.getElementById('cfgLabel').value = pr.label;
+  document.getElementById('cfgAllowEgress').checked = !!pr.PCB_ALLOW_CLOUD_EGRESS;
+  document.getElementById('cfgAgentLoop').checked = !!pr.PCB_AGENT_LOOP;
+  document.getElementById('cfgLocalHttp').checked = !!pr.PCB_ALLOW_LOCALHOST_HTTP;
+  document.getElementById('cfgScope').value = pr.PCB_EGRESS_SCOPE;
+  document.getElementById('cfgProvider').value = pr.PCB_LLM_PROVIDER;
+  document.getElementById('cfgBaseUrl').value = pr.PCB_LLM_BASE_URL;
+  document.getElementById('cfgModel').value = pr.PCB_LLM_MODEL;
+  document.getElementById('cfgKeyEnv').value = pr.PCB_LLM_API_KEY_ENV;
+};
+document.getElementById('newProfileBtn').onclick = () => {
+  const raw = prompt('输入新渠道标识（字母/数字/下划线/短横线，如 newapi 或 ollama）：', 'channel_2');
+  if (!raw || !raw.trim()) return;
+  editingProfileName = raw.trim();
+  const sel = document.getElementById('cfgProfileSelect');
+  const opt = document.createElement('option');
+  opt.value = editingProfileName;
+  opt.textContent = editingProfileName + '（新建未保存）';
+  opt.selected = true;
+  sel.appendChild(opt);
+  document.getElementById('cfgLabel').value = editingProfileName;
+  document.getElementById('cfgApiKey').value = '';
+  document.getElementById('cfgKeyStatus').textContent = `状态：新建渠道 [${editingProfileName}]，请填写配置后点击保存。`;
+};
+document.getElementById('deleteProfileBtn').onclick = async () => {
+  if (!confirm(`确定删除渠道 [${editingProfileName}] 吗？`)) return;
   try {
-    state.profile = await api('/api/profile', { method: 'POST', body: JSON.stringify(payload) });
+    state.profile = await api('/api/profile', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', profile_name: editingProfileName }),
+    });
+    updateProfileBadge();
+    fillSettingsForm(state.profile);
+  } catch (e) {
+    alert('删除失败：' + e.message);
+  }
+};
+document.getElementById('testConnBtn').onclick = async () => {
+  const box = document.getElementById('probeResultBox');
+  const btn = document.getElementById('testConnBtn');
+  box.style.display = 'block';
+  box.style.color = 'var(--muted)';
+  box.textContent = '正在发送零数据探针测试模型网关连通性…';
+  btn.disabled = true;
+  try {
+    const res = await api('/api/profile/test', {
+      method: 'POST',
+      body: JSON.stringify(collectSettingsPayload()),
+    });
+    box.style.color = res.ok ? 'var(--ok)' : 'var(--danger)';
+    box.textContent = (res.ok ? '✅ ' : '❌ ') + (res.message || '');
+  } catch (e) {
+    box.style.color = 'var(--danger)';
+    box.textContent = '❌ 测试请求失败：' + e.message;
+  } finally {
+    btn.disabled = false;
+  }
+};
+document.getElementById('closeSettingsBtn').onclick = () => {
+  document.getElementById('settingsModal').classList.remove('open');
+};
+document.getElementById('saveSettingsBtn').onclick = async () => {
+  try {
+    state.profile = await api('/api/profile', {
+      method: 'POST',
+      body: JSON.stringify(collectSettingsPayload()),
+    });
     updateProfileBadge();
     document.getElementById('settingsModal').classList.remove('open');
   } catch (e) {
@@ -777,24 +941,61 @@ document.getElementById('saveSettingsBtn').onclick = async () => {
   }
 };
 
+// Doctor modal
+async function loadDoctor(probe = false) {
+  const body = document.getElementById('doctorBody');
+  body.innerHTML = '<span class="spinner"></span>正在运行本机环境自检…';
+  try {
+    const rep = await api('/api/doctor' + (probe ? '?probe=1' : ''));
+    let html = (rep.checks || []).map(c => {
+      const cls = c.status === 'ok' ? 'ok' : (c.status === 'warn' ? 'warn' : '');
+      return `<div class="note-item" style="display:flex;justify-content:space-between;align-items:center;gap:8px;">
+        <div><strong>${esc(c.name)}</strong><div style="font-size:12px;color:var(--muted);">${esc(c.summary)}</div></div>
+        <span class="badge ${cls}">${esc(c.status)}</span>
+      </div>`;
+    }).join('');
+    if (rep.recommendations && rep.recommendations.length) {
+      html += '<div class="hint" style="margin-top:8px;"><strong>建议：</strong><br/>'
+        + rep.recommendations.map(r => '• ' + esc(r)).join('<br/>') + '</div>';
+    }
+    body.innerHTML = html;
+  } catch (e) {
+    body.innerHTML = `<div style="color:var(--danger);">自检失败：${esc(e.message)}</div>`;
+  }
+}
+document.getElementById('openDoctorBtn').onclick = () => {
+  document.getElementById('doctorModal').classList.add('open');
+  loadDoctor(false);
+};
+document.getElementById('doctorProbeBtn').onclick = () => loadDoctor(true);
+document.getElementById('closeDoctorBtn').onclick = () => {
+  document.getElementById('doctorModal').classList.remove('open');
+};
+
 // MCP info modal
-document.getElementById('openMcpInfoBtn').onclick = () => {
-  const origin = window.location.origin;
-  const info = {
-    web_workbench: origin + '/',
-    mcp_streamable_http_endpoint: origin + '/mcp',
-    rest_answer_endpoint: origin + '/api/answer',
-    toolset: (state.health || {}).toolset || 'agent',
-    catalog_version: (state.health || {}).catalog_version || 'unknown',
-    example_mcp_json_rpc: {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/list',
-      params: {},
-    },
-  };
-  document.getElementById('mcpInfoPre').textContent = JSON.stringify(info, null, 2);
+document.getElementById('openMcpInfoBtn').onclick = async () => {
+  try {
+    const cfg = await api('/api/mcp-config');
+    document.getElementById('mcpStdioPre').textContent = JSON.stringify(
+      cfg.recommended_mcpServers_using_local_profile || { mcpServers: cfg.mcpServers }, null, 2
+    );
+    document.getElementById('mcpInfoPre').textContent = JSON.stringify(
+      cfg.streamable_http_mcp || {}, null, 2
+    );
+  } catch (e) {
+    document.getElementById('mcpInfoPre').textContent = '获取配置失败：' + e.message;
+  }
   document.getElementById('mcpModal').classList.add('open');
+};
+document.getElementById('copyStdioMcpBtn').onclick = async () => {
+  await navigator.clipboard.writeText(document.getElementById('mcpStdioPre').textContent);
+  document.getElementById('copyStdioMcpBtn').textContent = '已复制 ✓';
+  setTimeout(() => { document.getElementById('copyStdioMcpBtn').textContent = '复制 JSON'; }, 1500);
+};
+document.getElementById('copyHttpMcpBtn').onclick = async () => {
+  await navigator.clipboard.writeText(document.getElementById('mcpInfoPre').textContent);
+  document.getElementById('copyHttpMcpBtn').textContent = '已复制 ✓';
+  setTimeout(() => { document.getElementById('copyHttpMcpBtn').textContent = '复制 JSON'; }, 1500);
 };
 document.getElementById('closeMcpBtn').onclick = () => {
   document.getElementById('mcpModal').classList.remove('open');

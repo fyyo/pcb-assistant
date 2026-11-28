@@ -80,6 +80,53 @@ class WebWorkbenchTests(SyntheticCatalogTestCase):
                 self.assertEqual(status, 200)
                 self.assertEqual(updated["PCB_LLM_MODEL"], "demo-model-v2")
                 self.assertTrue(updated["has_api_key"])
+
+                # Multi-profile creation, switching, doctor, mcp-config, and single-instance probe.
+                status, created_p2 = _http_json(
+                    base + "/api/profile",
+                    method="POST",
+                    body={
+                        "profile_name": "local_ollama",
+                        "label": "Ollama Local",
+                        "PCB_ALLOW_CLOUD_EGRESS": True,
+                        "PCB_ALLOW_LOCALHOST_HTTP": True,
+                        "PCB_LLM_BASE_URL": "http://127.0.0.1:11434/v1",
+                        "PCB_LLM_MODEL": "qwen2.5:14b",
+                    },
+                )
+                self.assertEqual(status, 200)
+                self.assertEqual(created_p2["active_profile"], "local_ollama")
+                self.assertEqual(len(created_p2["profiles"]), 2)
+
+                status, view_def = _http_json(base + "/api/profile?name=default")
+                self.assertEqual(status, 200)
+                self.assertEqual(view_def["PCB_LLM_MODEL"], "demo-model-v2")
+
+                status, probe_res = _http_json(
+                    base + "/api/profile/test",
+                    method="POST",
+                    body={"PCB_LLM_BASE_URL": "", "PCB_LLM_MODEL": ""},
+                )
+                self.assertEqual(status, 200)
+                self.assertFalse(probe_res["ok"])
+
+                status, doc_res = _http_json(base + "/api/doctor")
+                self.assertEqual(status, 200)
+                self.assertEqual(doc_res["schema"], "pcb-doctor-v1")
+
+                status, mcp_cfg = _http_json(base + "/api/mcp-config")
+                self.assertEqual(status, 200)
+                self.assertIn("recommended_mcpServers_using_local_profile", mcp_cfg)
+                self.assertIn("streamable_http_mcp", mcp_cfg)
+
+                host, port = server.server_address[:2]
+                self.assertTrue(web_workbench._probe_existing_workbench(host, port))
+                reuse_code = web_workbench.main([
+                    "--host", host,
+                    "--port", str(port),
+                    "--reuse-running",
+                ])
+                self.assertEqual(reuse_code, 0)
             finally:
                 server.shutdown()
                 server.server_close()

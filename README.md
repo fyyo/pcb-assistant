@@ -33,10 +33,15 @@
 ```powershell
 git clone https://github.com/fyyo/pcb-assistant.git
 cd pcb-assistant
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements/requirements-core.txt
 
-# 方式一：Windows 直接双击 start_workbench.bat，或用命令打开本机 Web 工作台 (http://127.0.0.1:8765/)
+# 可选：一键创建 .venv 并安装核心中文分词（Windows 也可直接执行 start_workbench.bat --init-venv）
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -e ".[core]"
+
+# 环境与知识库自检（加 --probe-llm 可一并测试模型网关连通性）
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog doctor
+
+# 方式一：Windows 直接双击 start_workbench.bat（自动复用已运行实例/空闲端口），或命令行启动
 .venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog web --open
 
 # 方式二：命令行确定性问答（--model off 不依赖任何模型权重）
