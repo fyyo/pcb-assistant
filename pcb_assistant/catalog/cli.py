@@ -774,6 +774,10 @@ def main() -> int:
     web_parser.add_argument("--api-token", default=None)
     web_parser.add_argument("--open", action="store_true", dest="open_browser",
                             help="Open the workbench in the default browser")
+    web_parser.add_argument("--desktop", action="store_true",
+                            help="Open the workbench in a standalone desktop app window")
+    web_parser.add_argument("--create-shortcut", action="store_true",
+                            help="Create a windowless desktop shortcut on Windows")
     web_parser.add_argument("--reuse-running", action="store_true",
                             help="If workbench is already running on host:port, open it and exit 0")
     web_parser.add_argument("--auto-port", action="store_true",
@@ -971,6 +975,10 @@ def main() -> int:
                 web_argv.extend(["--api-token", args.api_token])
             if args.open_browser:
                 web_argv.append("--open")
+            if args.desktop:
+                web_argv.append("--desktop")
+            if args.create_shortcut:
+                web_argv.append("--create-shortcut")
             if args.reuse_running:
                 web_argv.append("--reuse-running")
             if args.auto_port:

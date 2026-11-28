@@ -14,5 +14,5 @@ indent_size = 2
 [*.md]
 trim_trailing_whitespace = false
 
-[*.{ps1,bat,cmd}]
+[*.{ps1,bat,cmd,vbs}]
 end_of_line = crlf

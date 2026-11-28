@@ -122,10 +122,19 @@ def _agent_loop_enabled(arguments, environ=None):
             and env.get("PCB_AGENT_LOOP", "false").strip().lower() == "true")
 
 
-def answer(arguments, request_id, *, catalog_directory=None, operation_runner=None):
+def _emit(on_event, payload):
+    if callable(on_event):
+        try:
+            on_event(payload)
+        except Exception:
+            pass
+
+
+def answer(arguments, request_id, *, catalog_directory=None, operation_runner=None, on_event=None):
     """Select and execute the workflow; callers never select a business tool."""
     question = arguments["question"].strip()
     history = list(arguments.get("history") or ())[-8:]
+    _emit(on_event, {"type": "step", "stage": "triage", "message": "识别问题范围与多轮上下文…"})
     context = "\n".join(item["content"] for item in history if item["role"] == "user")
     triage = phase6_gate.classify(question, context=context)
     if triage.status != phase6_gate.IN_SCOPE:
@@ -161,6 +170,7 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
         knowledge_args = {**arguments, "question": question}
         if not table_followup and (_RESET.search(question) or _KNOWLEDGE.search(question) or is_knowledge_question(question)):
             knowledge_args["history"] = []
+        _emit(on_event, {"type": "step", "stage": "local_retrieval", "message": "检索本机只读 Catalog 相关证据摘录…"})
         if _agent_loop_enabled(arguments):
             local_args = {**knowledge_args, "mode": "evidence_only"}
             local_outcome = phase6_managed.answer(
@@ -171,6 +181,7 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
                 fallback_outcome=local_outcome,
                 route="knowledge",
                 catalog_directory=catalog_directory,
+                on_event=on_event,
             )
             return _annotate(outcome, "knowledge", context_used=table_followup, agent_loop=True)
         return _annotate(phase6_managed.answer(
@@ -185,6 +196,7 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
         record = phase6_managed._gate_record(question, history, triage, 'evidence_only')
         return _annotate(phase6_managed.ManagedOutcome(record, triage.status), 'clarification')
 
+    _emit(on_event, {"type": "step", "stage": "local_diagnosis", "message": "运行压合诊断规则：提取板材事实、排除正常观测并评估候选原因…"})
     limit = min(arguments.get("limit", 6), arguments.get("max_sources", 6))
     filters = {key: arguments[key] for key in (
         "doc_type", "source", "tags", "version", "content_status") if arguments.get(key)}
@@ -231,6 +243,7 @@ def answer(arguments, request_id, *, catalog_directory=None, operation_runner=No
             route="diagnosis",
             case_context=case,
             catalog_directory=catalog_directory,
+            on_event=on_event,
         )
         return _annotate(outcome, "diagnosis", context_used=inherited, agent_loop=True)
     return _annotate(local_outcome, "diagnosis", context_used=inherited)

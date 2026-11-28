@@ -33,6 +33,36 @@ def _utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
+def _compact_sop_summary(result: dict) -> dict | None:
+    diag = result.get("diagnosis")
+    if not isinstance(diag, dict):
+        return None
+    hyps = []
+    for h in (diag.get("hypotheses") or [])[:5]:
+        if not isinstance(h, dict):
+            continue
+        contra = [
+            str(item.get("observation") or "")
+            for item in (h.get("contradicting_evidence") or [])
+            if isinstance(item, dict) and item.get("observation")
+        ]
+        hyps.append({
+            "rank": h.get("rank"),
+            "cause_id": h.get("cause_id"),
+            "cause_label": h.get("cause_label"),
+            "score": h.get("score"),
+            "evidence_strength": h.get("evidence_strength"),
+            "contradicting": contra,
+            "verification_steps": list(h.get("verification_steps") or [])[:2],
+        })
+    return {
+        "defect": diag.get("defect"),
+        "defect_label": diag.get("defect_label"),
+        "facts": dict(diag.get("facts") or {}),
+        "hypotheses": hyps,
+    }
+
+
 def validate_case_id(case_id: str) -> str:
     if not isinstance(case_id, str) or not CASE_ID_RE.fullmatch(case_id.strip()):
         raise CatalogError("invalid_case_id")
@@ -147,6 +177,7 @@ class CaseWorkspace:
         citations = [
             {
                 "excerpt_id": item.get("excerpt_id") or item.get("citation_id"),
+                "doc_id": item.get("doc_id", ""),
                 "title": item.get("title", ""),
                 "source_type": item.get("source_type", ""),
             }
@@ -159,10 +190,13 @@ class CaseWorkspace:
             "status": outcome.status,
             "route": (result.get("workflow") or {}).get("route"),
             "answer_mode": result.get("answer_mode"),
+            "evidence_status": result.get("evidence_status"),
             "data_egress": outcome.data_egress,
             "answer": answer_text,
             "citations": citations,
             "missing_information": list(result.get("missing_information") or []),
+            "clarifying_questions": list(result.get("clarifying_questions") or []),
+            "sop": _compact_sop_summary(result),
             "agent_trace": list(result.get("agent_trace") or []),
             "result_fingerprint": result.get("result_fingerprint"),
         }
@@ -318,6 +352,7 @@ def _ask_once(
     catalog_directory: Path,
     env: dict[str, str],
     filters: dict | None = None,
+    on_event=None,
 ):
     """Execute one turn through router.answer() under the active environment."""
     arguments = {
@@ -341,6 +376,7 @@ def _ask_once(
                 catalog_directory=catalog_directory,
                 operation_runner=lambda name, inputs: phase6_mcp._tool_call_result(
                     name, inputs, request_id),
+                on_event=on_event,
             )
     finally:
         for k, old in saved.items():

@@ -750,7 +750,7 @@ class EgressGuard:
             if not text:
                 continue
             seen.add(excerpt_id)
-            result.append({
+            item = {
                 "excerpt_id": excerpt_id,
                 "title": title,
                 "type": citation.get("type", ""),
@@ -758,7 +758,11 @@ class EgressGuard:
                 "text": text,
                 "evidence_status": citation.get("evidence_status", ""),
                 "independently_verified": bool(citation.get("independently_verified", False)),
-            })
+            }
+            doc_id = citation.get("doc_id")
+            if isinstance(doc_id, str) and re.fullmatch(r"(?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32}", doc_id):
+                item["doc_id"] = doc_id
+            result.append(item)
             if len(result) >= limit:
                 break
         return result

@@ -41,8 +41,8 @@ python -m venv .venv
 # 环境与知识库自检（加 --probe-llm 可一并测试模型网关连通性）
 .venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog doctor
 
-# 方式一：Windows 直接双击 start_workbench.bat（自动复用已运行实例/空闲端口），或命令行启动
-.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog web --open
+# 方式一：Windows 直接双击 PCB压合工作台.vbs（无黑框独立桌面应用窗口），或运行 start_workbench.bat
+.venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog web --desktop --reuse-running --auto-port
 
 # 方式二：命令行确定性问答（--model off 不依赖任何模型权重）
 .venv\Scripts\python.exe -X utf8 -B knowledge_catalog.py --catalog data/my_catalog chat "压合后板边出现白斑，先核对什么？" --model off

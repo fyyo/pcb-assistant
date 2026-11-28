@@ -41,14 +41,20 @@ if /I "%~1"=="--init-venv" (
     exit /b %ERRORLEVEL%
 )
 
+if /I "%~1"=="--shortcut" (
+    %PY% -X utf8 -B knowledge_catalog.py web --create-shortcut
+    pause
+    exit /b %ERRORLEVEL%
+)
+
 set "CATALOG_ARG="
 if not "%~1"=="" set "CATALOG_ARG=--catalog "%~1""
 
 echo 正在启动或唤醒 PCB 压合排查工作台 ...
 if "%PY%"=="py -3" (
-    py -3 -X utf8 -B knowledge_catalog.py %CATALOG_ARG% web --open --reuse-running --auto-port
+    py -3 -X utf8 -B knowledge_catalog.py %CATALOG_ARG% web --desktop --reuse-running --auto-port
 ) else (
-    "%PY%" -X utf8 -B knowledge_catalog.py %CATALOG_ARG% web --open --reuse-running --auto-port
+    "%PY%" -X utf8 -B knowledge_catalog.py %CATALOG_ARG% web --desktop --reuse-running --auto-port
 )
 if errorlevel 1 pause
 endlocal

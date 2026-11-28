@@ -31,6 +31,7 @@ class WebWorkbenchTests(SyntheticCatalogTestCase):
             catalog_directory=self.catalog,
             cases_dir=tmpdir / "cases",
             profile_path=tmpdir / "agent_profile.json",
+            feedback_root=tmpdir / "feedback",
             toolset=toolset,
             api_token=api_token,
         )
@@ -174,6 +175,76 @@ class WebWorkbenchTests(SyntheticCatalogTestCase):
                 )
                 self.assertEqual(status, 200)
                 self.assertEqual(cleared["status"], "cleared")
+            finally:
+                server.shutdown()
+                server.server_close()
+
+    def test_sse_stream_search_document_reader_and_feedback_ledger(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            server, base = self._start_server(Path(tmp))
+            try:
+                # 1. SSE answer stream emits step events + done with SOP board
+                req = Request(
+                    base + "/api/answer/stream",
+                    data=json.dumps({
+                        "question": "压合后板边出现白斑，真空曲线正常，怎么排查？",
+                        "mode": "local",
+                    }).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urlopen(req, timeout=15) as resp:
+                    self.assertEqual(resp.status, 200)
+                    raw_sse = resp.read().decode("utf-8")
+                self.assertIn("event: step", raw_sse)
+                self.assertIn("event: done", raw_sse)
+                done_payload = None
+                for block in raw_sse.split("\n\n"):
+                    if "event: done" in block:
+                        for line in block.splitlines():
+                            if line.startswith("data: "):
+                                done_payload = json.loads(line[6:])
+                self.assertIsNotNone(done_payload)
+                self.assertIsNotNone(done_payload["sop"])
+                self.assertEqual(done_payload["sop"]["defect"], "white_spot")
+
+                # 2. Direct search + full document reader
+                status, search_res = _http_json(base + "/api/search?q=%E7%99%BD%E6%96%91&limit=5")
+                self.assertEqual(status, 200)
+                self.assertGreater(len(search_res["results"]), 0)
+                first_doc_id = search_res["results"][0]["doc_id"]
+
+                status, doc_view = _http_json(base + "/api/documents/" + first_doc_id)
+                self.assertEqual(status, 200)
+                self.assertEqual(doc_view["document"]["doc_id"], first_doc_id)
+                self.assertIn("text", doc_view["document"])
+
+                # 3. Private feedback / knowledge reflow ledger
+                turn_res = done_payload["result"]
+                status, fb_rec = _http_json(
+                    base + "/api/feedback",
+                    method="POST",
+                    body={
+                        "kind": "other",
+                        "text": "切片复核确认系板边流胶过快导致局部树脂饥饿。",
+                        "turn": {
+                            "result_fingerprint": turn_res["result_fingerprint"],
+                            "answer_mode": turn_res["answer_mode"],
+                            "evidence_status": turn_res["evidence_status"],
+                            "citations": [
+                                {"excerpt_id": c["excerpt_id"]}
+                                for c in turn_res.get("citations", [])
+                            ],
+                        },
+                    },
+                )
+                self.assertEqual(status, 200)
+                self.assertEqual(fb_rec["status"], "recorded")
+                self.assertFalse(fb_rec["catalog_write"])
+
+                status, fb_list = _http_json(base + "/api/feedback")
+                self.assertEqual(status, 200)
+                self.assertEqual(fb_list["summary"]["total_feedback"], 1)
             finally:
                 server.shutdown()
                 server.server_close()

@@ -1,9 +1,9 @@
-"""Zero-dependency local HTTP Web workbench + JSON REST + MCP HTTP server.
+"""Zero-dependency local HTTP Web workbench + SSE stream + JSON REST + MCP HTTP server.
 
 Binds strictly to 127.0.0.1 by default. Non-loopback bindings require an
-explicit Bearer token (--api-token or PCB_WEB_API_TOKEN). All case data and
-optional API profiles remain strictly under ``.private/``; the Catalog is
-opened read-only.
+explicit Bearer token (--api-token or PCB_WEB_API_TOKEN). All case data,
+feedback ledger, and optional API profiles remain strictly under ``.private/``;
+the Catalog is opened read-only.
 """
 from __future__ import annotations
 
@@ -13,7 +13,10 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 from pathlib import Path
+import queue
 import re
+import shutil
+import subprocess
 import sys
 import threading
 import time
@@ -22,11 +25,13 @@ from urllib.parse import parse_qs, unquote, urlsplit
 from urllib.request import urlopen
 import webbrowser
 
-from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG, json_text
+from pcb_assistant.catalog.common import CatalogError, DEFAULT_CATALOG
+import pcb_assistant.catalog.feedback as pilot_feedback
 import pcb_assistant.config as runtime_config
 import pcb_assistant.interfaces.mcp as phase6_mcp
 import pcb_assistant.interfaces.workbench as workbench
 from pcb_assistant.interfaces.workbench_ui import WORKBENCH_HTML
+from pcb_assistant.paths import ROOT, python_executable
 
 
 DEFAULT_HOST = "127.0.0.1"
@@ -34,6 +39,7 @@ DEFAULT_PORT = 8765
 LOOPBACK_HOSTS = {"127.0.0.1", "localhost", "::1"}
 MAX_REQUEST_BODY_BYTES = 1_000_000
 _CASE_PATH_RE = re.compile(r"^/api/cases/([A-Za-z0-9][A-Za-z0-9_-]{0,63})(?:/(notes|clear|report))?$")
+_DOC_PATH_RE = re.compile(r"^/api/documents/((?:MAIL|CASE|KNOWLEDGE|ATTACHMENT|PUBLIC)_[0-9a-f]{24,32})$")
 
 
 def _safe_profile_view(
@@ -66,6 +72,93 @@ def _probe_existing_workbench(host: str, port: int) -> bool:
             return isinstance(data, dict) and data.get("status") == "ok" and "toolset" in data
     except (OSError, URLError, ValueError):
         return False
+
+
+def _find_chromium_app_browser() -> str | None:
+    """Find Microsoft Edge or Google Chrome on Windows/Linux for chromeless --app mode."""
+    if os.name == "nt":
+        candidates = [
+            shutil.which("msedge"),
+            r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
+            r"C:\Program Files\Microsoft\Edge\Application\msedge.exe",
+            shutil.which("chrome"),
+            r"C:\Program Files\Google\Chrome\Application\chrome.exe",
+            r"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe",
+        ]
+        for item in candidates:
+            if item and Path(item).is_file():
+                return str(item)
+    else:
+        for name in ("microsoft-edge", "google-chrome", "chromium", "chromium-browser"):
+            found = shutil.which(name)
+            if found:
+                return found
+    return None
+
+
+def open_workbench_window(url: str, *, desktop_mode: bool = False) -> str:
+    """Open workbench either in a chromeless desktop app window or default browser."""
+    if desktop_mode:
+        browser_bin = _find_chromium_app_browser()
+        if browser_bin:
+            try:
+                creationflags = getattr(subprocess, "DETACHED_PROCESS", 0) | getattr(
+                    subprocess, "CREATE_NO_WINDOW", 0
+                )
+                subprocess.Popen(
+                    [browser_bin, f"--app={url}", "--window-size=1380,880"],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    creationflags=creationflags,
+                )
+                return "desktop_app"
+            except OSError:
+                pass
+    webbrowser.open(url)
+    return "browser"
+
+
+def create_desktop_shortcut(target_dir: Path | None = None) -> dict:
+    """Create a zero-console Windows .lnk shortcut pointing to PCB压合工作台.vbs."""
+    if os.name != "nt":
+        raise CatalogError("desktop_shortcut_windows_only")
+    vbs_path = (ROOT / "PCB压合工作台.vbs").resolve()
+    if not vbs_path.is_file():
+        raise CatalogError("launcher_vbs_missing")
+
+    if target_dir is not None:
+        desktop = Path(target_dir).expanduser().resolve()
+    else:
+        desktop = Path(os.path.expanduser("~/Desktop")).resolve()
+    if not desktop.is_dir():
+        raise CatalogError("desktop_directory_not_found")
+
+    shortcut_path = desktop / "PCB 压合排查工作台.lnk"
+    ps_script = (
+        "$ws = New-Object -ComObject WScript.Shell; "
+        "$sc = $ws.CreateShortcut($env:PCB_LNK_PATH); "
+        "$sc.TargetPath = 'wscript.exe'; "
+        "$sc.Arguments = '\"' + $env:PCB_VBS_PATH + '\"'; "
+        "$sc.WorkingDirectory = $env:PCB_ROOT_DIR; "
+        "$sc.Description = 'PCB 压合知识库与受控排查工作台'; "
+        "$edge = 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe'; "
+        "if (Test-Path $edge) { $sc.IconLocation = \"$edge,0\" }; "
+        "$sc.Save()"
+    )
+    env = dict(os.environ)
+    env["PCB_LNK_PATH"] = str(shortcut_path)
+    env["PCB_VBS_PATH"] = str(vbs_path)
+    env["PCB_ROOT_DIR"] = str(ROOT)
+    completed = subprocess.run(
+        ["powershell", "-NoProfile", "-NonInteractive", "-Command", ps_script],
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=15,
+    )
+    if completed.returncode != 0 or not shortcut_path.is_file():
+        raise CatalogError("shortcut_creation_failed")
+    return {"status": "created", "shortcut_path": str(shortcut_path)}
 
 
 def _render_case_markdown_text(case_data: dict) -> str:
@@ -107,6 +200,20 @@ def _render_case_markdown_text(case_data: dict) -> str:
     return "\n".join(lines).rstrip() + "\n"
 
 
+def _build_answer_response(outcome, elapsed_ms: int) -> dict:
+    sanitized_result = phase6_mcp.sanitize_payload(outcome.result)
+    return {
+        "status": outcome.status,
+        "external_services": outcome.external_services,
+        "data_egress": outcome.data_egress,
+        "warnings": list(outcome.warnings),
+        "errors": list(outcome.errors),
+        "elapsed_ms": elapsed_ms,
+        "sop": workbench._compact_sop_summary(outcome.result),
+        "result": sanitized_result,
+    }
+
+
 class WorkbenchServerState:
     def __init__(
         self,
@@ -114,12 +221,14 @@ class WorkbenchServerState:
         catalog_directory: Path = DEFAULT_CATALOG,
         cases_dir: Path = workbench.DEFAULT_CASES_DIR,
         profile_path: Path = workbench.DEFAULT_PROFILE_PATH,
+        feedback_root: Path = pilot_feedback.DEFAULT_FEEDBACK_ROOT,
         toolset: str = "agent",
         api_token: str | None = None,
     ):
         self.catalog_directory = Path(catalog_directory).expanduser().resolve()
         self.cases_dir = Path(cases_dir).expanduser().resolve()
         self.profile_path = Path(profile_path).expanduser().resolve()
+        self.feedback_root = Path(feedback_root).expanduser().resolve()
         self.toolset = "agent" if toolset == "agent" else "single"
         self.api_token = (api_token or "").strip() or None
         self.workspace = workbench.CaseWorkspace(
@@ -134,6 +243,7 @@ def create_server(
     catalog_directory: Path = DEFAULT_CATALOG,
     cases_dir: Path = workbench.DEFAULT_CASES_DIR,
     profile_path: Path = workbench.DEFAULT_PROFILE_PATH,
+    feedback_root: Path = pilot_feedback.DEFAULT_FEEDBACK_ROOT,
     toolset: str = "agent",
     api_token: str | None = None,
 ) -> ThreadingHTTPServer:
@@ -146,12 +256,13 @@ def create_server(
         catalog_directory=catalog_directory,
         cases_dir=cases_dir,
         profile_path=profile_path,
+        feedback_root=feedback_root,
         toolset=toolset,
         api_token=token,
     )
 
     class Handler(BaseHTTPRequestHandler):
-        server_version = "pcb-workbench/1.0"
+        server_version = "pcb-workbench/2.0"
 
         def log_message(self, format, *args):  # noqa: A002
             return
@@ -194,6 +305,28 @@ def create_server(
                 raise CatalogError("json_body_must_be_object")
             return parsed
 
+        def _parse_answer_inputs(self, body: dict):
+            question = str(body.get("question") or "").strip()
+            if not question:
+                raise CatalogError("question_required")
+            mode = body.get("mode", "agent")
+            if mode not in ("agent", "local"):
+                raise CatalogError("invalid_mode")
+            case_id = body.get("case_id")
+            active_case = None
+            if case_id:
+                active_case = state.workspace.open_or_create(str(case_id))
+                history = active_case.get("history") or []
+            else:
+                raw_hist = body.get("history") or []
+                history = raw_hist if isinstance(raw_hist, list) else []
+            filters = {
+                k: body[k]
+                for k in ("doc_type", "source", "tags", "version", "content_status")
+                if body.get(k)
+            }
+            return question, mode, active_case, history, filters
+
         def do_GET(self):
             parsed_url = urlsplit(self.path)
             path = unquote(parsed_url.path)
@@ -218,7 +351,7 @@ def create_server(
                         "active_profile": profile.get("active_profile", "default"),
                         "profile_configured": bool(
                             profile["PCB_ALLOW_CLOUD_EGRESS"]
-                            and profile["has_api_key"]
+                            and (profile["has_api_key"] or profile["PCB_ALLOW_LOCALHOST_HTTP"])
                             and profile["PCB_LLM_MODEL"]
                         ),
                     })
@@ -249,6 +382,64 @@ def create_server(
                             http_origin=origin,
                         ),
                     )
+                    return
+                if path == "/api/search":
+                    q = (query_params.get("q") or [""])[0].strip()
+                    doc_type = (query_params.get("doc_type") or [None])[0]
+                    source = (query_params.get("source") or [None])[0]
+                    try:
+                        limit = max(1, min(50, int((query_params.get("limit") or ["20"])[0])))
+                    except ValueError:
+                        limit = 20
+                    args: dict = {"query": q, "limit": limit}
+                    if doc_type:
+                        args["doc_type"] = doc_type
+                    if source:
+                        args["source"] = source
+                    with phase6_mcp._catalog_context(state.catalog_directory), \
+                            phase6_mcp._toolset_context("agent"):
+                        envelope, is_err = phase6_mcp.call_tool("pcb_search", args, "REQ_WEB_SEARCH")
+                    if is_err:
+                        self._send_json(HTTPStatus.BAD_REQUEST, {"error": "search_failed", "details": envelope["errors"]})
+                    else:
+                        self._send_json(HTTPStatus.OK, envelope["result"])
+                    return
+                doc_match = _DOC_PATH_RE.fullmatch(path)
+                if doc_match:
+                    doc_id = doc_match.group(1)
+                    with phase6_mcp._catalog_context(state.catalog_directory), \
+                            phase6_mcp._toolset_context("agent"):
+                        doc_env, doc_err = phase6_mcp.call_tool(
+                            "pcb_get_document",
+                            {
+                                "doc_id": doc_id,
+                                "include_text": True,
+                                "max_chars": 10000,
+                                "include_attachments": True,
+                                "attachment_limit": 5,
+                                "attachment_max_chars": 2500,
+                            },
+                            "REQ_WEB_DOC",
+                        )
+                        if doc_err:
+                            self._send_json(HTTPStatus.NOT_FOUND, {"error": "document_not_found"})
+                            return
+                        rel_env, _ = phase6_mcp.call_tool(
+                            "pcb_related", {"doc_id": doc_id, "limit": 20}, "REQ_WEB_REL"
+                        )
+                        sim_env, _ = phase6_mcp.call_tool(
+                            "pcb_similar_cases", {"doc_id": doc_id, "limit": 6}, "REQ_WEB_SIM"
+                        )
+                    self._send_json(HTTPStatus.OK, {
+                        "document": doc_env["result"],
+                        "related": rel_env.get("result") or {},
+                        "similar_cases": sim_env.get("result") or {},
+                    })
+                    return
+                if path == "/api/feedback":
+                    summary = pilot_feedback.feedback_status(root=state.feedback_root)
+                    recent = pilot_feedback.list_feedback(root=state.feedback_root, status="all", limit=15)
+                    self._send_json(HTTPStatus.OK, {"summary": summary, "items": recent.get("items", [])})
                     return
                 if path == "/api/cases":
                     self._send_json(HTTPStatus.OK, {"cases": state.workspace.list_cases()})
@@ -303,6 +494,28 @@ def create_server(
                     )
                     self._send_json(HTTPStatus.OK, probe)
                     return
+                if path == "/api/desktop-shortcut":
+                    receipt = create_desktop_shortcut()
+                    self._send_json(HTTPStatus.OK, receipt)
+                    return
+                if path == "/api/shutdown":
+                    self._send_json(HTTPStatus.OK, {"status": "shutting_down"})
+                    threading.Timer(0.15, self.server.shutdown).start()
+                    return
+                if path == "/api/feedback":
+                    turn_payload = body.get("turn")
+                    text = str(body.get("text") or "").strip()
+                    kind = str(body.get("kind") or "other").strip()
+                    citation_ids = body.get("citation_ids")
+                    receipt = pilot_feedback.record_feedback(
+                        turn_payload,
+                        text,
+                        kind=kind,
+                        citation_ids=citation_ids,
+                        root=state.feedback_root,
+                    )
+                    self._send_json(HTTPStatus.OK, receipt)
+                    return
                 if path == "/api/cases":
                     case_id = body.get("case_id", "")
                     title = str(body.get("title") or "")
@@ -310,25 +523,7 @@ def create_server(
                     self._send_json(HTTPStatus.OK, data)
                     return
                 if path == "/api/answer":
-                    question = str(body.get("question") or "").strip()
-                    if not question:
-                        raise CatalogError("question_required")
-                    mode = body.get("mode", "agent")
-                    if mode not in ("agent", "local"):
-                        raise CatalogError("invalid_mode")
-                    case_id = body.get("case_id")
-                    active_case = None
-                    if case_id:
-                        active_case = state.workspace.open_or_create(str(case_id))
-                        history = active_case.get("history") or []
-                    else:
-                        raw_hist = body.get("history") or []
-                        history = raw_hist if isinstance(raw_hist, list) else []
-                    filters = {
-                        k: body[k]
-                        for k in ("doc_type", "source", "tags", "version", "content_status")
-                        if body.get(k)
-                    }
+                    question, mode, active_case, history, filters = self._parse_answer_inputs(body)
                     started = time.monotonic()
                     with state.env_lock:
                         env, _ = workbench.load_local_agent_env(state.profile_path)
@@ -343,15 +538,58 @@ def create_server(
                     elapsed_ms = int((time.monotonic() - started) * 1000)
                     if active_case is not None:
                         state.workspace.append_turn(active_case, question, outcome)
-                    self._send_json(HTTPStatus.OK, {
-                        "status": outcome.status,
-                        "external_services": outcome.external_services,
-                        "data_egress": outcome.data_egress,
-                        "warnings": list(outcome.warnings),
-                        "errors": list(outcome.errors),
-                        "elapsed_ms": elapsed_ms,
-                        "result": phase6_mcp.sanitize_payload(outcome.result),
-                    })
+                    self._send_json(HTTPStatus.OK, _build_answer_response(outcome, elapsed_ms))
+                    return
+                if path == "/api/answer/stream":
+                    question, mode, active_case, history, filters = self._parse_answer_inputs(body)
+                    self.send_response(HTTPStatus.OK)
+                    self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                    self.send_header("Cache-Control", "no-cache, no-store")
+                    self.send_header("X-Accel-Buffering", "no")
+                    self.end_headers()
+
+                    ev_queue: queue.Queue[tuple[str, dict] | None] = queue.Queue()
+
+                    def _emit_step(ev: dict):
+                        ev_queue.put(("step", ev))
+
+                    def _worker():
+                        started = time.monotonic()
+                        try:
+                            with state.env_lock:
+                                env, _ = workbench.load_local_agent_env(state.profile_path)
+                                outcome = workbench._ask_once(
+                                    question,
+                                    history,
+                                    mode=mode,
+                                    catalog_directory=state.catalog_directory,
+                                    env=env,
+                                    filters=filters,
+                                    on_event=_emit_step,
+                                )
+                            elapsed_ms = int((time.monotonic() - started) * 1000)
+                            if active_case is not None:
+                                state.workspace.append_turn(active_case, question, outcome)
+                            ev_queue.put(("done", _build_answer_response(outcome, elapsed_ms)))
+                        except CatalogError as exc:
+                            ev_queue.put(("error", {"error": str(exc)}))
+                        except Exception:
+                            ev_queue.put(("error", {"error": "internal_error"}))
+                        finally:
+                            ev_queue.put(None)
+
+                    threading.Thread(target=_worker, daemon=True).start()
+                    while True:
+                        item = ev_queue.get()
+                        if item is None:
+                            break
+                        event_name, payload = item
+                        chunk = f"event: {event_name}\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+                        try:
+                            self.wfile.write(chunk.encode("utf-8"))
+                            self.wfile.flush()
+                        except OSError:
+                            break
                     return
                 if path == "/mcp":
                     with state.env_lock:
@@ -403,6 +641,10 @@ def create_server(
 
 
 def main(argv=None) -> int:
+    if sys.stdout is None:
+        sys.stdout = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
+    if sys.stderr is None:
+        sys.stderr = open(os.devnull, "w", encoding="utf-8")  # noqa: SIM115
     parser = argparse.ArgumentParser(
         description="PCB 压合本机 Web 工作台 + JSON API + MCP Streamable HTTP 服务",
     )
@@ -414,10 +656,21 @@ def main(argv=None) -> int:
     parser.add_argument("--profile", default=None, help="启动时切换激活的命名模型渠道")
     parser.add_argument("--toolset", choices=("single", "agent"), default="agent")
     parser.add_argument("--api-token", default=None, help="非本机地址监听时必须提供 Bearer Token")
-    parser.add_argument("--open", action="store_true", dest="open_browser", help="启动后自动打开浏览器")
+    parser.add_argument("--open", action="store_true", dest="open_browser", help="启动后打开浏览器")
+    parser.add_argument("--desktop", action="store_true", help="使用独立无地址栏桌面应用窗口打开")
+    parser.add_argument("--create-shortcut", action="store_true", help="在 Windows 桌面创建无黑框快捷方式后退出")
     parser.add_argument("--reuse-running", action="store_true", help="若同端口已有本工作台运行则直接打开并退出")
     parser.add_argument("--auto-port", action="store_true", help="若首选端口被其他程序占用则自动顺延空闲端口")
     args = parser.parse_args(argv)
+
+    if args.create_shortcut:
+        try:
+            receipt = create_desktop_shortcut()
+            print(json.dumps(receipt, ensure_ascii=False, indent=2))
+            return 0
+        except CatalogError as exc:
+            print(f"创建桌面快捷方式失败：{exc}", file=sys.stderr)
+            return 2
 
     env, _ = runtime_config.load_runtime_env(
         args.agent_config,
@@ -446,12 +699,13 @@ def main(argv=None) -> int:
         except CatalogError:
             pass
 
+    should_open = args.open_browser or args.desktop
     if args.reuse_running and preferred_port > 0 and _probe_existing_workbench(host, preferred_port):
         open_host = "127.0.0.1" if host in ("0.0.0.0", "::", "") else host
         url = f"http://{open_host}:{preferred_port}/"
         print(f"检测到 PCB 压合排查工作台已在运行：{url}")
-        if args.open_browser:
-            webbrowser.open(url)
+        if should_open:
+            open_workbench_window(url, desktop_mode=args.desktop)
         return 0
 
     try:
@@ -486,15 +740,17 @@ def main(argv=None) -> int:
     actual_host, actual_port = server.server_address[:2]
     open_host = "127.0.0.1" if actual_host in ("0.0.0.0", "::", "") else actual_host
     url = f"http://{open_host}:{actual_port}/"
-    print(f"PCB 压合排查工作台已启动：{url}")
-    print(f"MCP Streamable HTTP 端点：{url}mcp (toolset={args.toolset})")
-    print("按 Ctrl+C 停止服务。")
-    if args.open_browser:
-        threading.Timer(0.6, lambda: webbrowser.open(url)).start()
+    if sys.stdout is not None:
+        print(f"PCB 压合排查工作台已启动：{url}")
+        print(f"MCP Streamable HTTP 端点：{url}mcp (toolset={args.toolset})")
+        print("按 Ctrl+C 或在界面右上角点击「退出工作台」停止服务。")
+    if should_open:
+        threading.Timer(0.5, lambda: open_workbench_window(url, desktop_mode=args.desktop)).start()
     try:
         server.serve_forever()
     except KeyboardInterrupt:
-        print("\n服务已停止。")
+        if sys.stdout is not None:
+            print("\n服务已停止。")
     finally:
         server.server_close()
     return 0

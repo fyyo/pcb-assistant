@@ -146,12 +146,20 @@ def _merge_usage(total, delta):
     return merged
 
 
+_TOOL_LABELS = {
+    "search_evidence": "检索脱敏证据摘录",
+    "get_related_attachments": "两跳追查关联邮件与附件",
+    "inspect_diagnosis": "核对本地诊断候选与反证排除项",
+    "inspect_material_and_table": "检查材料指标与适用条件缺口",
+}
+
+
 class AgentToolbox:
     """Read-only, EgressGuard-wrapped local investigation tools for the Agent."""
 
     def __init__(self, catalog_directory, guard, *, base_filters=None,
                  case_context=None, max_tool_calls=DEFAULT_MAX_TOOL_CALLS,
-                 precomputed_diagnosis=None, precomputed_question=""):
+                 precomputed_diagnosis=None, precomputed_question="", on_event=None):
         self.catalog_directory = Path(catalog_directory or catalog_chat.DEFAULT_CATALOG)
         self.guard = guard
         self.base_filters = dict(base_filters or {})
@@ -165,6 +173,7 @@ class AgentToolbox:
         )
         self._precomputed_question = " ".join(str(precomputed_question or "").split())
         self._seen_calls = set()
+        self._on_event = on_event
 
     def _register_citations(self, scrubbed):
         added = 0
@@ -428,12 +437,24 @@ class AgentToolbox:
             })
             return {"status": "tool_error"}
         added = len(self.evidence_registry) - before
-        self.trace.append({
+        elapsed_ms = int((time.monotonic() - started) * 1000)
+        entry = {
             "tool": str(name),
             "status": str(result.get("status", "ok")),
             "evidence_added": added,
-            "elapsed_ms": int((time.monotonic() - started) * 1000),
-        })
+            "elapsed_ms": elapsed_ms,
+        }
+        self.trace.append(entry)
+        if callable(self._on_event):
+            try:
+                label = _TOOL_LABELS.get(str(name), str(name))
+                self._on_event({
+                    "type": "tool",
+                    **entry,
+                    "message": f"{label}（+{added} 条摘录 · {elapsed_ms} ms）",
+                })
+            except Exception:
+                pass
         return result
 
 
@@ -751,6 +772,7 @@ def run_agent(
     environ=None,
     provider_factory=None,
     rate_limiter=None,
+    on_event=None,
 ):
     """Run the bounded sanitized-egress Agent loop with deterministic verification."""
     env = os.environ if environ is None else environ
@@ -809,7 +831,17 @@ def run_agent(
             max_tool_calls=max_tool_calls,
             precomputed_diagnosis=(fallback_outcome.result or {}).get("diagnosis"),
             precomputed_question=scrubbed_question,
+            on_event=on_event,
         )
+        if callable(on_event):
+            try:
+                on_event({
+                    "type": "step",
+                    "stage": "egress_guard",
+                    "message": f"二次脱敏检查通过（范围={scope}），请求模型 {config.model} 进行有界查证…",
+                })
+            except Exception:
+                pass
         deadline = time.monotonic() + managed.TOTAL_DEADLINE_SECONDS
         factory = managed.create_provider if provider_factory is None else provider_factory
         active_backend = backend
@@ -841,6 +873,15 @@ def run_agent(
                 allow_repair=isinstance(provider, managed.OpenAIChatCompletionsProvider),
             )
 
+        if callable(on_event):
+            try:
+                on_event({
+                    "type": "step",
+                    "stage": "validation",
+                    "message": "核验 EXC_ 引用白名单、数值依据与输出零残留检查…",
+                })
+            except Exception:
+                pass
         structured, rendered, safe_citations, citation_validation = (
             _validate_and_render_agent_answer(structured, toolbox)
         )
